@@ -1,0 +1,30 @@
+# Deno
+.deno/
+deno.lock
+
+# 依赖
+node_modules
+
+# 构建
+dist/
+build/
+
+# 由 uiPreactTailwindPlugin 生成的 @source 文件（每次构建会重新生成）
+ui-preact-sources.css
+
+# dweb 自动生成（每次构建/启动会重新生成）
+_client.dep.tsx
+
+# Docker 缓存（deno cache 预填目录）
+runtime/
+
+# 环境
+.env
+.env.local
+
+# IDE
+.idea
+.cursor
+
+# 系统
+.DS_Store

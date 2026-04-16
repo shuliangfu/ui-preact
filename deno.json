@@ -1,0 +1,88 @@
+{
+  "name": "@dreamer/ui-preact",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "Preact UI components for Dreamer. Migrated from ui-view (desktop + mobile path parity, shared implementations).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shuliangfu/dreamer-jsr.git"
+  },
+  "exports": {
+    ".": "./src/mod.ts",
+    "./basic": "./src/desktop/basic/mod.ts",
+    "./form": "./src/desktop/form/mod.ts",
+    "./layout": "./src/shared/layout/mod.ts",
+    "./feedback": "./src/shared/feedback/mod.ts",
+    "./navigation": "./src/shared/navigation/mod.ts",
+    "./data-display": "./src/shared/data-display/mod.ts",
+    "./config-provider": "./src/shared/config-provider/mod.ts",
+    "./charts": "./src/shared/charts/mod.ts",
+    "./shared": "./src/shared/mod.ts",
+    "./mobile": "./src/mobile/mod.ts",
+    "./mobile/basic": "./src/mobile/basic/mod.ts",
+    "./mobile/form": "./src/mobile/form/mod.ts"
+  },
+  "test": {
+    "include": [
+      "tests/**/*.ts",
+      "tests/**/*.tsx"
+    ],
+    "exclude": [
+      "docs/runtime/**",
+      "**/deno-cache/**"
+    ]
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "plugin.ts",
+      "LICENSE",
+      "NOTICE",
+      "README.md",
+      "README-zh.md"
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.spec.ts",
+      "**/tests/**"
+    ]
+  },
+  "tasks": {
+    "test": "deno test -A tests/",
+    "test:unit": "deno test -A tests/collect-desktop-routes.test.ts tests/docs-sidebar-reconcile.test.ts",
+    "check": "deno check src plugin.ts tests",
+    "lint": "deno lint src tests"
+  },
+  "imports": {
+    "@dreamer/test": "../test/src/mod.ts",
+    "@dreamer/i18n": "jsr:@dreamer/i18n@^1.0.1",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.1.6",
+    "@dreamer/logger": "jsr:@dreamer/logger@^1.0.3",
+    "playwright": "npm:playwright@^1.58.2",
+    "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.2",
+    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.18",
+    "@dreamer/service": "jsr:@dreamer/service@^1.0.2",
+    "tailwind-merge": "npm:tailwind-merge@^2.6.0",
+    "preact": "npm:preact@10.28.3",
+    "preact/compat": "npm:preact@10.28.3/compat",
+    "@preact/signals": "npm:@preact/signals@2.2.0",
+    "chart.js": "npm:chart.js@^4.5.1",
+    "@dreamer/markdown": "jsr:@dreamer/markdown@^1.0.1",
+    "prismjs": "npm:prismjs@^1.29.0"
+  },
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "lib": ["deno.window", "dom"]
+  },
+  "lint": {
+    "include": ["src/", "tests/"],
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-explicit-any"]
+    }
+  }
+}

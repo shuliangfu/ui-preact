@@ -1,0 +1,33 @@
+# 推送 v* tag 时自动发布到 JSR；发布前执行 check/lint 以在 CI 层兜底。
+# 公开 API 已补齐显式返回类型（如 `: JSXRenderable`），无需 --allow-slow-types。
+name: Publish
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5
+
+      - name: Cache dependencies
+        run: deno cache src/mod.ts plugin.ts
+
+      - name: Check
+        run: deno check src/
+
+      - name: Lint
+        run: deno lint src/
+
+      - name: Publish to JSR
+        run: deno publish

@@ -1,0 +1,26 @@
+/**
+ * 打印图标，24×24 stroke。
+ */
+import { Icon } from "../Icon.tsx";
+import type { JSX } from "preact";
+import type { IconComponentProps } from "../Icon.tsx";
+
+const svg = (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="w-full h-full"
+    aria-hidden
+  >
+    <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+    <path d="M6 14h12v8H6z" />
+  </svg>
+);
+
+export function IconPrinter(props?: IconComponentProps): JSX.Element {
+  return <Icon size={props?.size} class={props?.class}>{svg}</Icon>;
+}

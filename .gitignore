@@ -1,0 +1,33 @@
+# Deno
+.deno/
+deno.lock
+*.so
+*.dylib
+*.dll
+
+# Dependencies
+node_modules
+bun.lock
+
+# Build
+dist/
+build/
+out/
+
+# Env
+.env
+.env.local
+
+# IDE
+.cursor
+.idea
+
+# System
+.DS_Store
+Thumbs.db
+
+# Test
+tests/data/
+tests/output/
+.snapshots/
+coverage/

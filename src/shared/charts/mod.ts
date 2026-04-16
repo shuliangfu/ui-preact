@@ -1,0 +1,29 @@
+/**
+ * Charts 图表组件
+ * 基于 Chart.js，提供 ChartLine / ChartBar / ChartPie / ChartDoughnut / ChartRadar / ChartPolarArea / ChartBubble / ChartScatter。
+ * 各组件直接返回 Preact VNode。
+ */
+
+export type {
+  BaseChartProps,
+  ChartData,
+  ChartOptions,
+  ChartType,
+} from "./types.ts";
+export { ChartBase } from "./ChartBase.tsx";
+export { ChartLine } from "./ChartLine.tsx";
+export type { ChartLineProps } from "./ChartLine.tsx";
+export { ChartBar } from "./ChartBar.tsx";
+export type { ChartBarProps } from "./ChartBar.tsx";
+export { ChartPie } from "./ChartPie.tsx";
+export type { ChartPieProps } from "./ChartPie.tsx";
+export { ChartDoughnut } from "./ChartDoughnut.tsx";
+export type { ChartDoughnutProps } from "./ChartDoughnut.tsx";
+export { ChartRadar } from "./ChartRadar.tsx";
+export type { ChartRadarProps } from "./ChartRadar.tsx";
+export { ChartPolarArea } from "./ChartPolarArea.tsx";
+export type { ChartPolarAreaProps } from "./ChartPolarArea.tsx";
+export { ChartBubble } from "./ChartBubble.tsx";
+export type { ChartBubbleProps } from "./ChartBubble.tsx";
+export { ChartScatter } from "./ChartScatter.tsx";
+export type { ChartScatterProps } from "./ChartScatter.tsx";

@@ -1,0 +1,38 @@
+# docker-compose.yml
+# 单应用模式
+# 使用前请先执行 deno task build 构建
+# 首次启动可挂载 Deno 缓存加速：deno cache 后挂载 runtime/deno-cache
+
+services:
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    container_name: docs-app
+    restart: unless-stopped
+    stop_grace_period: 5s
+    user: "0:0"
+    ports:
+      - "0.0.0.0:3000:3000"
+    command: ["deno", "run", "-A", "dist/server.js"]
+    volumes:
+      - .:/app
+      - ${DENO_CACHE_DIR:-./runtime/deno-cache}:/deno-dir
+    healthcheck:
+      # 用 /proc/net/tcp 检测端口（3000 → 0BB8）
+      test: ["CMD-SHELL", 'grep -q "0BB8" /proc/net/tcp 2>/dev/null || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+
+networks:
+  default:
+    driver: bridge

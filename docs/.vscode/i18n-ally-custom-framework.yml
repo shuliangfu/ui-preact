@@ -1,0 +1,16 @@
+monopoly: true
+
+languageIds:
+  - javascript
+  - typescript
+  - javascriptreact
+  - typescriptreact
+
+usageMatchRegex:
+  - "[^\\w\\d]\\$t(?:r)?\\(['\"`]({key})['\"`]"
+  - "[^\\w\\d]\\$t(?:r)?\\(['\"`]({key})['\"`]\\s*,"
+  - "[^\\w\\d]\\$t(?:r)?\\(['\"`]({key})['\"`]\\s*,.*?['\"`][a-z]{2}-[A-Z]{2}['\"`]\\s*\\)"
+
+refactorTemplates:
+  - '$t("$1")'
+  - '$tr("$1")'
