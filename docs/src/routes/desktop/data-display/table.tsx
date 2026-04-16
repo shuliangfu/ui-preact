@@ -794,17 +794,22 @@ export default function DataDisplayTable() {
             {" "}
             后默认只读展示，<strong>双击</strong>进入编辑；控件<strong>
               失焦
-            </strong>时提交当前输入并<strong>退回只读表格</strong>（不再显示表单控件）。忽略{" "}
+            </strong>时提交当前输入并<strong>
+              退回只读表格
+            </strong>（不再显示表单控件）。忽略{" "}
             <code class="text-xs">render</code>。须传入{" "}
             <code class="text-xs">onCellChange</code>{" "}
-            并不可变更新行数据，否则不可激活编辑。在<strong>函数组件</strong>内须用{" "}
-            <code class="text-xs">useSignal</code>（或{" "}
+            并不可变更新行数据，否则不可激活编辑。在<strong>
+              函数组件
+            </strong>内须用 <code class="text-xs">useSignal</code>（或{" "}
             <code class="text-xs">useMemo(() =&gt; signal(…), [])</code>
             ）持有行数组，<strong>禁止</strong>在每次 render 里执行{" "}
             <code class="text-xs">signal([…])</code>
-            ，否则每帧都会换一个新 Signal、<code class="text-xs">dataSource</code>
-            回到初值，表现为无法键入。不包含
-            textarea（长文建议弹层编辑）。radio 为行内单选组，每行独立一组
+            ，否则每帧都会换一个新 Signal、<code class="text-xs">
+              dataSource
+            </code>
+            回到初值，表现为无法键入。不包含 textarea（长文建议弹层编辑）。radio
+            为行内单选组，每行独立一组
             name。若编辑态异常或无法键入，可在控制台执行{" "}
             <code class="text-xs">globalThis.__TABLE_EDIT_DEBUG__ = true</code>
             {" "}
@@ -829,8 +834,8 @@ export default function DataDisplayTable() {
           <strong>editable</strong>
           （
           <code class="text-xs">
-            text | number（InputNumber）| email | url | tel | date | time | select | checkbox
-            | radio
+            text | number（InputNumber）| email | url | tel | date | time |
+            select | checkbox | radio
           </code>
           ，可选 <code class="text-xs">disabled</code>{" "}
           布尔或函数）、width、align、fixed、sorter、ellipsis。类型导出：

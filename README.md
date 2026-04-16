@@ -25,21 +25,21 @@ bunx jsr add @dreamer/ui-preact
 
 ## 📂 Entry points
 
-| Entry | Description |
-| ----- | ----------- |
-| `@dreamer/ui-preact` | Desktop aggregate (shared + form and related) |
-| `@dreamer/ui-preact/basic` | Desktop basic components |
-| `@dreamer/ui-preact/form` | Desktop form components |
-| `@dreamer/ui-preact/layout` | Layout components |
-| `@dreamer/ui-preact/feedback` | Feedback, overlays, global messaging |
-| `@dreamer/ui-preact/navigation` | Navigation components |
-| `@dreamer/ui-preact/data-display` | Data display (lists, cards, media, etc.) |
-| `@dreamer/ui-preact/config-provider` | Global config (theme, locale, …) |
-| `@dreamer/ui-preact/charts` | Chart.js–based charts |
-| `@dreamer/ui-preact/shared` | Shared types and re-exports for tree-shaking |
-| `@dreamer/ui-preact/mobile` | Mobile aggregate + portal scope |
-| `@dreamer/ui-preact/mobile/basic` | Mobile basic |
-| `@dreamer/ui-preact/mobile/form` | Mobile form (re-export parity with desktop where applicable) |
+| Entry                                | Description                                                  |
+| ------------------------------------ | ------------------------------------------------------------ |
+| `@dreamer/ui-preact`                 | Desktop aggregate (shared + form and related)                |
+| `@dreamer/ui-preact/basic`           | Desktop basic components                                     |
+| `@dreamer/ui-preact/form`            | Desktop form components                                      |
+| `@dreamer/ui-preact/layout`          | Layout components                                            |
+| `@dreamer/ui-preact/feedback`        | Feedback, overlays, global messaging                         |
+| `@dreamer/ui-preact/navigation`      | Navigation components                                        |
+| `@dreamer/ui-preact/data-display`    | Data display (lists, cards, media, etc.)                     |
+| `@dreamer/ui-preact/config-provider` | Global config (theme, locale, …)                             |
+| `@dreamer/ui-preact/charts`          | Chart.js–based charts                                        |
+| `@dreamer/ui-preact/shared`          | Shared types and re-exports for tree-shaking                 |
+| `@dreamer/ui-preact/mobile`          | Mobile aggregate + portal scope                              |
+| `@dreamer/ui-preact/mobile/basic`    | Mobile basic                                                 |
+| `@dreamer/ui-preact/mobile/form`     | Mobile form (re-export parity with desktop where applicable) |
 
 The default root entry focuses on desktop usage; the **`mobile`** subpath adds
 mobile-specific components (e.g. `TabBar`, `PullRefresh`, `ScrollList`) and
@@ -97,9 +97,8 @@ app.start();
 @import "tailwindcss";
 ```
 
-Adjust paths to match your project. The plugin records only the component
-source files you actually import so Tailwind emits **one** theme and minimal
-CSS.
+Adjust paths to match your project. The plugin records only the component source
+files you actually import so Tailwind emits **one** theme and minimal CSS.
 
 ---
 
@@ -109,9 +108,8 @@ CSS.
   `jsxImportSource` to `preact` (same as this package’s `deno.json`).
 - **`@preact/signals`:** do **not** call `signal()` on every render inside a
   function component—that creates a new signal each time and breaks controlled
-  props and lists. Use
-  `useMemo(() => signal(initialValue), [])` (or module-level signals) so the
-  signal identity is stable across renders.
+  props and lists. Use `useMemo(() => signal(initialValue), [])` (or
+  module-level signals) so the signal identity is stable across renders.
 
 ---
 
@@ -153,8 +151,8 @@ pickers (see `form` export).
 
 ### 📐 Layout & container
 
-- **Container**, **Hero**, **Grid / GridItem**, **Stack**, **Divider**, **Tabs**,
-  **Accordion**
+- **Container**, **Hero**, **Grid / GridItem**, **Stack**, **Divider**,
+  **Tabs**, **Accordion**
 
 ### 🧭 Navigation
 
@@ -168,8 +166,9 @@ pickers (see `form` export).
 ### 📊 Data display
 
 - **Tag**, **Empty**, **Statistic**, **Segmented**, **Descriptions**, **Card**,
-  **List**, **Image**, **ImageViewer**, **Timeline**, **Collapse**, **Carousel**,
-  **Tree**, **Transfer**, **Calendar**, **Comment**, **CodeBlock**, …
+  **List**, **Image**, **ImageViewer**, **Timeline**, **Collapse**,
+  **Carousel**, **Tree**, **Transfer**, **Calendar**, **Comment**,
+  **CodeBlock**, …
 
 **Desktop:** Table (where exported)
 

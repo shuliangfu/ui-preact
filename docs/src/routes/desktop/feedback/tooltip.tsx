@@ -38,7 +38,8 @@ const TOOLTIP_API: ApiRow[] = [
     name: "overlayClass",
     type: "string",
     default: "-",
-    description: "气泡外层（Portal 根节点）class，可传 z-index 等（如全屏编辑器内抬高）",
+    description:
+      "气泡外层（Portal 根节点）class，可传 z-index 等（如全屏编辑器内抬高）",
   },
 ];
 

@@ -8,7 +8,6 @@
  * - **短列表**：`scrollHeight` 不超出视口时由 {@link relaxLoadMoreLatchIfNoScroll} 放宽门闩，并在 IO 就绪与加载结束后补触发。
  * - **贴底追加**：分页后若 `scrollTop` 仍停在旧底部，可能无新的 `scroll` 事件，须在加载结束节拍用 {@link clearConsumedLatchIfNearBottomIdle} 补解锁。
  * - **滚动根 ref** 须跨渲染稳定（`useRef`），勿每轮新建 holder，否则 `scrollContainerRef` 与 IO 永远对不上。
- *
  */
 
 import type { JSX } from "preact";
@@ -309,7 +308,9 @@ export function ScrollList(props: ScrollListProps): JSX.Element {
     loadMoreEmitBusyRef.current = true;
     try {
       const ret = fn();
-      if (ret != null && typeof (ret as PromiseLike<void>).then === "function") {
+      if (
+        ret != null && typeof (ret as PromiseLike<void>).then === "function"
+      ) {
         (ret as PromiseLike<void>).then(
           () => {
             loadMoreEmitBusyRef.current = false;
