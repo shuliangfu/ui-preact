@@ -24,12 +24,24 @@ async function processFile(path: string): Promise<void> {
   t = t.replaceAll("@dreamer/ui-view/form", "@dreamer/ui-preact/form");
   t = t.replaceAll("@dreamer/ui-view", "@dreamer/ui-preact");
 
-  t = t.replaceAll("import { createMemo, createSignal } from \"@dreamer/view\";", "import { computed, signal } from \"@preact/signals\";");
-  t = t.replaceAll("import { createMemo, createSignal } from '@dreamer/view';", "import { computed, signal } from '@preact/signals';");
+  t = t.replaceAll(
+    'import { createMemo, createSignal } from "@dreamer/view";',
+    'import { computed, signal } from "@preact/signals";',
+  );
+  t = t.replaceAll(
+    "import { createMemo, createSignal } from '@dreamer/view';",
+    "import { computed, signal } from '@preact/signals';",
+  );
   t = t.replace(/\bcreateMemo\(/g, "computed(");
 
-  t = t.replaceAll("import { createSignal } from \"@dreamer/view\";", "import { signal } from \"@preact/signals\";");
-  t = t.replaceAll("import { createSignal } from '@dreamer/view';", "import { signal } from '@preact/signals';");
+  t = t.replaceAll(
+    'import { createSignal } from "@dreamer/view";',
+    'import { signal } from "@preact/signals";',
+  );
+  t = t.replaceAll(
+    "import { createSignal } from '@dreamer/view';",
+    "import { signal } from '@preact/signals';",
+  );
 
   t = t.replaceAll(
     `import {
@@ -40,18 +52,24 @@ async function processFile(path: string): Promise<void> {
     `import { signal } from "@preact/signals";
 import { onCleanup, useLayoutEffect } from "preact/hooks";`,
   );
-  t = t.replace(/\bcreateRenderEffect\(\(\)\s*=>\s*\{/g, "useLayoutEffect(() => {");
-
-  t = t.replaceAll(
-    "import { createSignal, onCleanup } from \"@dreamer/view\";",
-    "import { signal } from \"@preact/signals\";\nimport { onCleanup } from \"preact/hooks\";",
+  t = t.replace(
+    /\bcreateRenderEffect\(\(\)\s*=>\s*\{/g,
+    "useLayoutEffect(() => {",
   );
 
-  t = t.replaceAll("import { createMemo } from \"@dreamer/view\";", "import { computed } from \"@preact/signals\";");
+  t = t.replaceAll(
+    'import { createSignal, onCleanup } from "@dreamer/view";',
+    'import { signal } from "@preact/signals";\nimport { onCleanup } from "preact/hooks";',
+  );
 
   t = t.replaceAll(
-    "import { onCleanup, onMount, type VNode } from \"@dreamer/view\";",
-    "import type { ComponentChildren } from \"preact\";\nimport { onCleanup, onMount } from \"preact/hooks\";",
+    'import { createMemo } from "@dreamer/view";',
+    'import { computed } from "@preact/signals";',
+  );
+
+  t = t.replaceAll(
+    'import { onCleanup, onMount, type VNode } from "@dreamer/view";',
+    'import type { ComponentChildren } from "preact";\nimport { onCleanup, onMount } from "preact/hooks";',
   );
   t = t.replace(/\bVNode\b/g, "ComponentChildren");
 

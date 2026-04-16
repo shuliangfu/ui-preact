@@ -67,8 +67,9 @@ const defaultGetCurrentPath = (): string => {
     return loc.pathname.replace(/\/$/, "") || "/";
   }
   try {
-    const injected = (globalThis as unknown as { __DATA__?: { pathname?: string } })
-      .__DATA__?.pathname;
+    const injected =
+      (globalThis as unknown as { __DATA__?: { pathname?: string } })
+        .__DATA__?.pathname;
     if (typeof injected === "string" && injected !== "") {
       return injected.replace(/\/$/, "") || "/";
     }

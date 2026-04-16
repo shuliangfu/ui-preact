@@ -6,7 +6,7 @@
  */
 
 import { createContext } from "preact";
-import type { ComponentChildren, JSX } from "preact";
+import type { ComponentChildren, Context, JSX } from "preact";
 import { useCallback, useMemo, useRef } from "preact/hooks";
 import { twMerge } from "tailwind-merge";
 
@@ -21,9 +21,9 @@ export interface MobilePortalHostContextValue {
 }
 
 /** 无 Provider 时为 `null` */
-export const MobilePortalHostContext = createContext<
+export const MobilePortalHostContext: Context<
   MobilePortalHostContextValue | null
->(null);
+> = createContext<MobilePortalHostContextValue | null>(null);
 
 /** {@link MobilePortalHostScope} 的 props */
 export interface MobilePortalHostScopeProps {
