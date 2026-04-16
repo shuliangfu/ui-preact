@@ -14,11 +14,7 @@ import {
   RENDER_ONLY_DOC_SPECS,
   type RenderOnlyDocSpec,
 } from "./component-catalog.ts";
-import {
-  createDocsBrowserTestEnv,
-  DOCS_BROWSER_CONFIG,
-  isUiPreactDocsSiteRunnable,
-} from "./helpers.ts";
+import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "./helpers.ts";
 
 /**
  * 纯展示页断言（仅本文件使用）：`main` 正文、可选 canvas/svg 数量。
@@ -76,10 +72,6 @@ async function assertRenderOnlyDocPage(
 }
 
 describe("docs 纯展示页渲染（专用断言，每页独立 dev）", () => {
-  if (!isUiPreactDocsSiteRunnable()) {
-    it.skip("需同步 docs/src/routes（含 _app.tsx）后再跑浏览器 E2E", () => {});
-    return;
-  }
   afterAll(async () => {
     await cleanupAllBrowsers();
   });

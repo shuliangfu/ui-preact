@@ -10,17 +10,9 @@ import {
   expect,
   it,
 } from "@dreamer/test";
-import {
-  createDocsBrowserTestEnv,
-  DOCS_BROWSER_CONFIG,
-  isUiPreactDocsSiteRunnable,
-} from "./helpers.ts";
+import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "./helpers.ts";
 
 describe("docs 浏览器：根路径 /", () => {
-  if (!isUiPreactDocsSiteRunnable()) {
-    it.skip("需同步 docs/src/routes（含 _app.tsx）后再跑浏览器 E2E", () => {});
-    return;
-  }
   const env = createDocsBrowserTestEnv();
   beforeAll(() => env.start());
   afterAll(async () => {

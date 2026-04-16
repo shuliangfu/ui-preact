@@ -1,6 +1,5 @@
 /**
- * @fileoverview docs 深度交互：按路由分 `describe`，**共享单一 docs dev**（一次 `start`），
- * 仅 `goto` 换页；避免每块各起子进程导致首轮冷启动极慢、易被误判为卡住。
+ * @fileoverview docs 深度交互：每个用例独立 describe + 独立 dev，避免单进程连跑上百导航导致子进程退出。
  * 与 `page-tests/page_*.test.ts` 按路由拆分的用例互补；请直接在本文件维护横切场景。
  */
 import {
@@ -11,11 +10,7 @@ import {
   expect,
   it,
 } from "@dreamer/test";
-import {
-  createDocsBrowserTestEnv,
-  DOCS_BROWSER_CONFIG,
-  isUiPreactDocsSiteRunnable,
-} from "./helpers.ts";
+import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "./helpers.ts";
 
 /**
  * 以下函数仅服务本测试文件：点击/输入等逻辑写在当前脚本内，不抽到 helpers.ts。
@@ -197,20 +192,15 @@ async function clickFirstCollapseHeader(t: BrowserCtx): Promise<boolean> {
   return ok as boolean;
 }
 
-describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
-  if (!isUiPreactDocsSiteRunnable()) {
-    it.skip("需同步 docs/src/routes（含 _app.tsx）后再跑浏览器 E2E", () => {});
-    return;
-  }
-  /** 全文件共用：一次拉起 docs dev，各用例只 `goto` 不同 path */
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
+describe("docs 浏览器深度交互（每用例独立 dev）", () => {
   afterAll(async () => {
-    await env.stopServerOnly();
     await cleanupAllBrowsers();
   });
 
   describe("Input 页：首个输入框可输入", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/input");
@@ -223,6 +213,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Checkbox 页：可勾选第一个复选框", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/checkbox");
@@ -235,6 +228,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Switch 页：可点击开关", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/switch");
@@ -247,6 +243,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("RadioGroup 页：有单选选项且页面正常", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/radio-group");
@@ -262,6 +261,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Select 页：可点击打开并选择选项", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/select");
@@ -293,6 +295,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("BackTop 页：滚动后可点击回到顶部按钮", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/other/back-top");
@@ -316,6 +321,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Textarea 页：首个多行框可输入", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/textarea");
@@ -328,6 +336,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Slider 页：可改变滑块值", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/slider");
@@ -351,6 +362,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Rate 页：有星级控件", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/rate");
@@ -366,6 +380,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("CheckboxGroup 页：可勾选第一个选项", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/checkbox-group");
@@ -378,6 +395,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Pagination 页：有分页且可点下一页", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/pagination");
@@ -390,6 +410,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Tabs 页：有标签可点击切换", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/layout/tabs");
@@ -403,6 +426,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Collapse 页：有折叠项可点击", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/collapse");
@@ -415,6 +441,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Modal 页：有弹窗说明或触发按钮", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/modal");
@@ -428,6 +457,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Toast 页：进入页面确认渲染", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/message/toast");
@@ -438,6 +470,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Tree 页：进入页面确认树形结构渲染", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/tree");
@@ -454,6 +489,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Table 页：进入页面确认表格渲染", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/table");
@@ -468,6 +506,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Alert 页：进入页面确认提示渲染", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/alert");
@@ -478,6 +519,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Link 页：进入页面确认链接渲染", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/basic/link");
@@ -492,6 +536,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Link 页：可点击「返回桌面」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/basic/link");
@@ -502,6 +549,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Search 页：输入并存在搜索控件", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/search");
@@ -514,6 +564,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Password 页：有密码框，若有显隐按钮则点击验证", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/password");
@@ -534,6 +587,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Input-number 页：可点击步进加", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/input-number");
@@ -553,6 +609,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("RadioGroup 页：可点击第一个单选", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/radio-group");
@@ -563,6 +622,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Rate 页：可点击星级", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/rate");
@@ -583,6 +645,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("MultiSelect 页：展开浮层后可点击全选", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/multiselect");
@@ -604,6 +669,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Date-picker 页：可点击输入框打开选择器", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/date-picker");
@@ -624,6 +692,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Time-picker 页：可点击输入框打开选择器", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/time-picker");
@@ -644,6 +715,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Upload 页：可点击上传区域", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/upload");
@@ -664,6 +738,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Transfer 页：可点击穿梭框移动按钮或列表项", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/transfer");
@@ -691,6 +768,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Mentions 页：可输入内容", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/mentions");
@@ -701,6 +781,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("RichTextEditor 页：可输入内容", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/rich-text-editor");
@@ -711,6 +794,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Toast 页：点击 success 触发轻提示", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/message/toast");
@@ -722,6 +808,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Message 页：有全局提示触发按钮", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/message/message");
@@ -734,6 +823,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Notification 页：点击触发通知", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/message/notification");
@@ -745,6 +837,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Alert 页：可点击「立即升级」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/alert");
@@ -755,6 +850,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Modal 页：打开后点击确定", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/modal");
@@ -769,6 +867,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Dialog 页：打开 Dialog 并确定", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/dialog");
@@ -785,6 +886,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Drawer 页：可点击打开抽屉", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/drawer");
@@ -797,6 +901,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Popconfirm 页：可点击触发确认", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/popconfirm");
@@ -809,6 +916,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Result 页：可点击「返回列表」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/result");
@@ -819,6 +929,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Hero 页：可点击「立即开始」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/layout/hero");
@@ -829,6 +942,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Tabs 页：点击「标签 B」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/layout/tabs");
@@ -839,6 +955,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Accordion 页：点击「第一项」展开", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/layout/accordion");
@@ -849,6 +968,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Breadcrumb 页：可点击面包屑链接", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/breadcrumb");
@@ -859,6 +981,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Menu 页：可点击菜单项", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/menu");
@@ -869,6 +994,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Dropdown 页：点击展开下拉", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/dropdown");
@@ -880,6 +1008,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Steps 页：可点击「下一步」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/steps");
@@ -890,6 +1021,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Page-header 页：可点击「操作」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/page-header");
@@ -900,6 +1034,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Anchor 页：有锚点链接", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/anchor");
@@ -910,6 +1047,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Card 页：可点击「更多」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/card");
@@ -920,6 +1060,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Empty 页：可点击「新建」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/empty");
@@ -930,6 +1073,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("ImageViewer 页：可点击打开查看器", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/image-viewer");
@@ -943,6 +1089,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Segmented 页：可点击分段选项", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/segmented");
@@ -953,6 +1102,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Collapse 页：点击「面板 1」", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/collapse");
@@ -963,6 +1115,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Carousel 页：可点击下一张或指示点", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/carousel");
@@ -988,6 +1143,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Calendar 页：可点击日期格", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/calendar");
@@ -1006,6 +1164,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Tree 页：可点击展开/选中节点", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/tree");
@@ -1029,6 +1190,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Tree 页：可勾选节点（点击 checkbox 后已勾选更新）", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/tree");
@@ -1053,6 +1217,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Code-block 页：可点击复制按钮", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/code-block");
@@ -1072,6 +1239,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("ConfigProvider 页：可点击切换 theme", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/other/config-provider");
@@ -1082,6 +1252,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Badge 页：有角标展示", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/basic/badge");
@@ -1092,6 +1265,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Avatar 页：有头像展示", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/basic/avatar");
@@ -1102,6 +1278,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Progress 页：有进度条", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/progress");
@@ -1112,6 +1291,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Tooltip 页：有悬停说明", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/tooltip");
@@ -1122,6 +1304,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Popover 页：有弹出面板", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/feedback/popover");
@@ -1132,6 +1317,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("List 页：有列表", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/list");
@@ -1142,6 +1330,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Tag 页：有标签", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/tag");
@@ -1152,6 +1343,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Image 页：有图片", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/image");
@@ -1162,6 +1356,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Descriptions 页：有描述列表", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/descriptions");
@@ -1172,6 +1369,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Timeline 页：有时间轴", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/timeline");
@@ -1182,6 +1382,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Statistic 页：有统计数值", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/statistic");
@@ -1192,6 +1395,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Comment 页：有评论", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/data-display/comment");
@@ -1202,6 +1408,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Affix 页：有固钉", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/navigation/affix");
@@ -1212,6 +1421,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Container / Grid / Stack / Divider 页：有布局内容", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/layout/container");
@@ -1222,6 +1434,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("DateTimePicker：点击输入打开面板", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/datetime-picker");
@@ -1242,6 +1457,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("TreeSelect：展开下拉并可选第一项", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/tree-select");
@@ -1261,6 +1479,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("ColorPicker：点击触发区", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/color-picker");
@@ -1279,6 +1500,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("AutoComplete：可输入", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/autocomplete");
@@ -1289,6 +1513,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Cascader：点击展开", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/cascader");
@@ -1309,6 +1536,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("MarkdownEditor：可输入", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/markdown-editor");
@@ -1319,6 +1549,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Form 容器：含表单项", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/form-containers");
@@ -1333,6 +1566,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("主题颜色：色板文档", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/other/theme-colors");
@@ -1343,6 +1579,9 @@ describe("docs 浏览器深度交互（共享单一 docs dev）", () => {
   });
 
   describe("Check 合订页：可勾选", () => {
+    const env = createDocsBrowserTestEnv();
+    beforeAll(() => env.start());
+    afterAll(() => env.stopServerOnly());
     it("main", async (t) => {
       if (!t?.browser) return;
       await env.goto(t, "/desktop/form/check");

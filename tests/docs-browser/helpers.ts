@@ -12,7 +12,6 @@ import {
   createCommand,
   dirname,
   execPath,
-  existsSync,
   getEnv,
   getEnvAll,
   IS_DENO,
@@ -29,7 +28,8 @@ const PREFERRED_DOCS_PORT = 3000;
 
 /**
  * docs dev 子进程从 spawn 到根路径 `GET /` 成功的最长等待（毫秒）。
- * 可调大：`UI_PREACT_DOCS_DEV_START_MS=180000`。
+ * 纯展示等用例会为**每个** `describe` 启停一次 dev，冷编译 + 慢盘时 60s 易超时；
+ * CI 或本机可调大：`UI_PREACT_DOCS_DEV_START_MS=180000`。
  */
 function docsDevStartupDeadlineMs(): number {
   const raw = getEnv("UI_PREACT_DOCS_DEV_START_MS");
@@ -151,18 +151,6 @@ const UI_PREACT_PKG_ROOT = normalizeAbsolutePath(join(_helpersDir, "..", ".."));
 export const DOCS_ROOT = join(UI_PREACT_PKG_ROOT, "docs");
 
 /**
- * 判断文档站是否具备启动 dweb dev 的最小文件（与 ui-view 侧栏 E2E 前置一致）。
- * 未同步 `src/routes` 时返回 false，避免 `beforeAll` 长时间挂起。
- *
- * @returns 存在 `docs/deno.json` 且存在 `docs/src/routes/_app.tsx` 时为 true
- */
-export function isUiPreactDocsSiteRunnable(): boolean {
-  const appTsx = join(DOCS_ROOT, "src", "routes", "_app.tsx");
-  const denoJson = join(DOCS_ROOT, "deno.json");
-  return existsSync(denoJson) && existsSync(appTsx);
-}
-
-/**
  * 浏览器子进程入口：与 `tests/browser-stub.js` 一致
  * @returns 绝对路径
  */
@@ -171,24 +159,20 @@ function entryPointForBrowser(): string {
 }
 
 /**
- * 传给 `it(..., DOCS_BROWSER_CONFIG)` 的浏览器选项。
- * `timeout`：单用例上限（含 docs dev 冷启动 + Playwright；`interactions.test.ts` 已共享单 dev）。
- * `protocolTimeout`：与 `@dreamer/test` 内 `launch({ timeout })` 上限对齐。
- * 不传 `browserSource`：与 `@dreamer/test` 默认一致，**优先系统 Chrome**，避免部分环境下
- * Playwright `chrome-headless-shell` 已起进程但 CDP 长期连不上导致超时。
+ * 传给 `it(..., DOCS_BROWSER_CONFIG)` 的浏览器选项（与 ui-view `tests/docs-browser/helpers.ts` 一致）
  */
 export const DOCS_BROWSER_CONFIG = {
   sanitizeOps: false,
   sanitizeResources: false,
-  timeout: 210_000,
+  timeout: 60_000,
   browser: {
     enabled: true,
     headless: true,
+    browserSource: "test" as const,
     entryPoint: entryPointForBrowser(),
     bodyContent: '<div id="root"></div>',
     browserMode: true,
     moduleLoadTimeout: 20_000,
-    protocolTimeout: 180_000,
   },
 };
 
@@ -240,12 +224,6 @@ export function createDocsBrowserTestEnv() {
    * 启动 docs dev：探测端口、spawn、`PORT` 与 `UI_PREACT_DOCS_BROWSER_E2E`、轮询就绪、settle
    */
   async function start(): Promise<void> {
-    if (!isUiPreactDocsSiteRunnable()) {
-      throw new Error(
-        "[@dreamer/ui-preact tests] 文档站无法启动：缺少 docs/src/routes/_app.tsx（或 docs/deno.json）。请同步 ui-view/docs 的路由与页面后再跑浏览器 E2E。",
-      );
-    }
-
     docsDevPort = await findAvailablePort(
       "127.0.0.1",
       preferredPortStart(),
