@@ -11,11 +11,7 @@ import {
   expect,
   it,
 } from "@dreamer/test";
-import {
-  createDocsBrowserTestEnv,
-  DOCS_BROWSER_CONFIG,
-  isUiPreactDocsSiteRunnable,
-} from "./helpers.ts";
+import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "./helpers.ts";
 
 const BUTTON_PATH = "/desktop/basic/button";
 
@@ -36,10 +32,6 @@ async function clickButtonInMainByExactLabel(
 }
 
 describe("Button 文档：按示例区块全交互（每块独立 dev）", () => {
-  if (!isUiPreactDocsSiteRunnable()) {
-    it.skip("需同步 docs/src/routes（含 _app.tsx）后再跑浏览器 E2E", () => {});
-    return;
-  }
   afterAll(async () => {
     await cleanupAllBrowsers();
   });

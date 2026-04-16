@@ -12,20 +12,12 @@ import {
   expect,
   it,
 } from "@dreamer/test";
-import {
-  createDocsBrowserTestEnv,
-  DOCS_BROWSER_CONFIG,
-  isUiPreactDocsSiteRunnable,
-} from "../helpers.ts";
+import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/layout/grid";
 
 describe("文档页 E2E：/desktop/layout/grid（Grid 栅格）", () => {
-  if (!isUiPreactDocsSiteRunnable()) {
-    it.skip("需同步 docs/src/routes（含 _app.tsx）后再跑浏览器 E2E", () => {});
-    return;
-  }
   const env = createDocsBrowserTestEnv();
   beforeAll(() => env.start());
   afterAll(async () => {
