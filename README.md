@@ -192,6 +192,20 @@ this file.
 
 ---
 
+## Changelog
+
+**Latest: [1.0.0] — 2026-04-17**
+
+- **Added:** First stable release of `@dreamer/ui-preact` (Preact 10 +
+  `@preact/signals`, parity with `@dreamer/ui-view` entry layout).
+- **Changed:** Explicit named barrel exports in root / `shared` / `desktop` /
+  `mobile` / `basic` `mod.ts`; explicit `Icon*` list in basic barrels;
+  desktop/mobile deltas avoid duplicate names with `shared`.
+
+Full history: [CHANGELOG.md](./CHANGELOG.md).
+
+---
+
 ## 📄 License
 
 Apache-2.0. See [LICENSE](./LICENSE).
