@@ -180,6 +180,20 @@ Chart.js：ChartLine、ChartBar、ChartPie、ChartDoughnut、ChartRadar、ChartP
 
 ---
 
+## 变更日志
+
+**最新：[1.0.0] — 2026-04-17**
+
+- **新增：** `@dreamer/ui-preact` 首个稳定版（Preact 10 + `@preact/signals`，与
+  `ui-view` 入口布局对齐）。
+- **变更：** 根入口与 `shared` / `desktop` / `mobile` / `basic` 的 `mod.ts`
+  使用显式命名再导出；`basic` 内图标显式列出；`desktop` / `mobile` 仅导出相对
+  `shared` 的增量以避免重复。
+
+完整记录见 [CHANGELOG-zh.md](./CHANGELOG-zh.md)。
+
+---
+
 ## 📄 License
 
 Apache-2.0. See [LICENSE](./LICENSE).
