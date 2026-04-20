@@ -103,6 +103,7 @@ import {
   IconCircle,
   IconCircleDollarSign,
   IconCircleDot,
+  IconCircleSplit,
   IconClipboard,
   IconClipboardCheck,
   IconClock,
@@ -185,6 +186,7 @@ import {
   IconMicOff,
   IconMinus,
   IconMinusCircle,
+  IconMonitorSplit,
   IconMoon,
   IconMoreHorizontal,
   IconMoreVertical,
@@ -650,7 +652,10 @@ export default function BasicIcon() {
     { Component: IconLogIn, name: "LogIn" },
     { Component: IconLogOut, name: "LogOut" },
     { Component: IconUserCog, name: "UserCog" },
+    /** 浅色 / 自动 / 深色；竖直黑白圆与显示器半分均可表示「自动」 */
     { Component: IconSun, name: "Sun" },
+    { Component: IconCircleSplit, name: "CircleSplit" },
+    { Component: IconMonitorSplit, name: "MonitorSplit" },
     { Component: IconMoon, name: "Moon" },
     /** 主题色 / 取色（如 ColorPicker 后缀、外观设置） */
     { Component: IconPalette, name: "Palette" },
@@ -720,6 +725,8 @@ export default function BasicIcon() {
   ];
   const 天气自然 = [
     { Component: IconSun, name: "Sun" },
+    { Component: IconCircleSplit, name: "CircleSplit" },
+    { Component: IconMonitorSplit, name: "MonitorSplit" },
     { Component: IconMoon, name: "Moon" },
     { Component: IconCloud, name: "Cloud" },
     { Component: IconDroplet, name: "Droplet" },
@@ -910,6 +917,49 @@ export default function BasicIcon() {
             copyable
             wrapLongLines
           />
+        </div>
+
+        <div class="space-y-4">
+          <Title level={3}>主题图标（浅色 / 自动 / 深色）</Title>
+          <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
+            太阳（浅色）、竖直黑白圆或显示器半分（自动）、月亮（深色）。
+            CircleSplit 为左右对分、不倾斜，最贴近「亮/暗各半」。
+          </Paragraph>
+          <div class="flex flex-wrap items-center gap-6 rounded-lg border border-dashed border-slate-300 bg-slate-50/80 px-4 py-4 sm:gap-8 sm:px-6 dark:border-slate-600 dark:bg-slate-900/40">
+            <div class="flex flex-col items-center gap-2">
+              <IconSun size="lg" class="text-amber-500" />
+              <span class="text-xs text-slate-600 dark:text-slate-400">
+                Sun
+              </span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+              <IconCircleSplit
+                size="lg"
+                class="text-slate-900 dark:text-slate-100"
+              />
+              <span class="text-xs text-slate-600 dark:text-slate-400">
+                CircleSplit
+              </span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+              <IconMonitorSplit
+                size="lg"
+                class="text-slate-700 dark:text-slate-200"
+              />
+              <span class="text-xs text-slate-600 dark:text-slate-400">
+                MonitorSplit
+              </span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+              <IconMoon
+                size="lg"
+                class="text-indigo-500 dark:text-indigo-300"
+              />
+              <span class="text-xs text-slate-600 dark:text-slate-400">
+                Moon
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
