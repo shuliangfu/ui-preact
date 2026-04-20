@@ -324,13 +324,18 @@ export function Dropdown(props: DropdownProps): JSX.Element {
    * 在 Portal 分支中渲染的菜单与可选箭头，供 createPortal 复用。
    */
   const buildPortalContent = () => {
+    /**
+     * 与 ui-view {@link Dropdown} 一致：`arrow` 时勿画顶边全宽 border，避免与菱形箭头底边叠成双线。
+     */
     const panel = (
       <div
         key="dropdown-overlay-panel"
         id={overlayId}
         role="menu"
         class={twMerge(
-          "relative z-10 min-w-[120px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg p-1",
+          arrow
+            ? "relative z-10 min-w-[120px] rounded-lg border-x border-b border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg p-1"
+            : "relative z-10 min-w-[120px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg p-1",
           overlayClass,
         )}
       >
