@@ -54,11 +54,10 @@ const DROPDOWN_API: ApiRow[] = [
   },
   {
     name: "placement",
-    type:
-      "bottom | bottomLeft | bottomRight | bottomAuto | top | topLeft | topRight",
+    type: "bottom | bottomLeft | bottomRight | bottomAuto",
     default: "bottom",
     description:
-      "下拉位置；bottom 为正下方居中，bottomAuto 为正下方且根据左右空间自动左/右移",
+      "下拉位置（均在触发器下方）；bottom 为正下方居中，bottomAuto 为根据左右空间在正下/偏左/偏右间切换",
   },
   {
     name: "disabled",
@@ -78,6 +77,13 @@ const DROPDOWN_API: ApiRow[] = [
     default: "-",
     description: "下拉层 id（无障碍）",
   },
+  {
+    name: "arrow",
+    type: "boolean",
+    default: "false",
+    description:
+      "为 true 时在浮层与触发器间显示小尖角（`createPortal`+`fixed`，与 `ui-view` 一致，随 placement 定方位）",
+  },
   { name: "class", type: "string", default: "-", description: "包装器 class" },
 ];
 
@@ -88,14 +94,37 @@ const overlay = <ul class="list-none m-0">...</ul>;
   <Button variant="default">点击展开</Button>
 </Dropdown>`;
 
-const exampleClick = `<Dropdown
-  open={open()}
-  onOpenChange={(o) => open.value = o}
+/**
+ * 与「trigger=click」下左/下中/下右 三列示例一致；展开态由 Dropdown 内部维护，勿用 open 快照。
+ */
+const exampleClick = `{/* 下左：与触发器左缘对齐 */}
+<Dropdown
+  arrow
   overlay={overlay}
   trigger="click"
   placement="bottomLeft"
 >
-  <Button variant="default">点击展开</Button>
+  <Button type="button" variant="default">下左</Button>
+</Dropdown>
+
+{/* 下中：正下方、水平相对触发器居中，placement 默认 "bottom" */}
+<Dropdown
+  arrow
+  overlay={overlay}
+  trigger="click"
+  placement="bottom"
+>
+  <Button type="button" variant="default">下中</Button>
+</Dropdown>
+
+{/* 下右：与触发器右缘对齐 */}
+<Dropdown
+  arrow
+  overlay={overlay}
+  trigger="click"
+  placement="bottomRight"
+>
+  <Button type="button" variant="default">下右</Button>
 </Dropdown>`;
 
 const exampleHover = `<Dropdown
@@ -232,8 +261,15 @@ export default function NavigationDropdown() {
       <section>
         <Title level={1}>Dropdown 下拉菜单</Title>
         <Paragraph class="mt-2">
-          下拉菜单：children、overlay、onOpenChange、trigger、hoverOpenDelay、hoverCloseDelay、placement、disabled、overlayClass、overlayId。展开状态由组件内部维护。
-          overlay 内菜单项建议 hover/focus 样式与{" "}
+          下拉菜单：浮层在浏览器中经 <code class="text-xs">createPortal</code>
+          挂到 <code class="text-xs">body</code>
+          且 <code class="text-xs">fixed</code> 定位，滚动时 rAF 贴触发器；可设
+          {" "}
+          <code class="text-xs">arrow</code>{" "}
+          小尖角。还有 children、overlay、onOpenChange、trigger、
+          hoverOpenDelay、hoverCloseDelay、placement、disabled、
+          overlayClass、overlayId。展开状态由组件内部维护。 overlay 内菜单项建议
+          hover/focus 样式与{" "}
           <a
             href="/desktop/navigation/menu"
             class="text-blue-600 dark:text-blue-400 underline"
@@ -260,14 +296,61 @@ export default function NavigationDropdown() {
         <Title level={2}>示例</Title>
 
         <div class="space-y-4">
-          <Title level={3}>trigger=click</Title>
-          <Dropdown
-            overlay={overlay}
-            trigger="click"
-            placement="bottomLeft"
-          >
-            <Button type="button" variant="default">点击展开</Button>
-          </Dropdown>
+          <Title level={3}>
+            trigger=click：下左 / 下中 / 下右（<code class="text-sm">
+              arrow
+            </code>
+            ）
+          </Title>
+          <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
+            同一 <code class="text-xs">overlay</code>，仅{" "}
+            <code class="text-xs">placement</code> 不同：{" "}
+            <code class="text-xs">bottomLeft</code>、
+            <code class="text-xs">bottom</code>（下中，默认即正下居中）、
+            <code class="text-xs">bottomRight</code>。均开启
+            <code class="text-xs">arrow</code> 便于对比尖角与触发条的水平关系。
+          </Paragraph>
+          <div class="flex flex-wrap items-start gap-6 md:gap-10">
+            <div class="flex flex-col gap-2">
+              <span class="text-xs text-slate-500 dark:text-slate-400">
+                下左·<code class="text-xs">bottomLeft</code>
+              </span>
+              <Dropdown
+                arrow
+                overlay={overlay}
+                trigger="click"
+                placement="bottomLeft"
+              >
+                <Button type="button" variant="default">下左</Button>
+              </Dropdown>
+            </div>
+            <div class="flex flex-col gap-2">
+              <span class="text-xs text-slate-500 dark:text-slate-400">
+                下中·<code class="text-xs">bottom</code>
+              </span>
+              <Dropdown
+                arrow
+                overlay={overlay}
+                trigger="click"
+                placement="bottom"
+              >
+                <Button type="button" variant="default">下中</Button>
+              </Dropdown>
+            </div>
+            <div class="flex flex-col gap-2">
+              <span class="text-xs text-slate-500 dark:text-slate-400">
+                下右·<code class="text-xs">bottomRight</code>
+              </span>
+              <Dropdown
+                arrow
+                overlay={overlay}
+                trigger="click"
+                placement="bottomRight"
+              >
+                <Button type="button" variant="default">下右</Button>
+              </Dropdown>
+            </div>
+          </div>
           <CodeBlock
             title="代码示例"
             code={exampleClick}

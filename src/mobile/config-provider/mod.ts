@@ -6,6 +6,9 @@
  * @see {@link ../../desktop/config-provider/mod.ts} 桌面同路径
  */
 export { ConfigProvider } from "./ConfigProvider.tsx";
-export type { ConfigProviderProps } from "./ConfigProvider.tsx";
+export type {
+  ConfigProviderBatchConfig,
+  ConfigProviderProps,
+} from "./ConfigProvider.tsx";
 export { getConfig, setConfig } from "./config-store.ts";
 export type { ConfigProviderConfig, ThemeMode } from "./config-store.ts";

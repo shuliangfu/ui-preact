@@ -330,7 +330,13 @@ export default function Layout({ children, data }: LayoutProps) {
          * flex-auto 在短文时仍可 flex-grow 垫高，长文时随内容变高，整列滚动、页脚跟在正文后。
          */
       }
-      <main className="flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-y-auto overscroll-y-contain px-3 py-6 sm:px-6 sm:py-8 lg:px-10">
+      {
+        /*
+         * `relative z-10`：主栏相对侧栏抬升叠放顺序，避免正文里 `absolute` 下拉被侧栏盖住。
+         * 若浮层仍「缺一角」，多为 `overflow-y-auto` 裁剪——须改 Dropdown 为 `fixed` 或调整滚动容器。
+         */
+      }
+      <main className="relative z-10 flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-y-auto overscroll-y-contain px-3 py-6 sm:px-6 sm:py-8 lg:px-10">
         <div className="flex flex-auto flex-col">{children}</div>
         <SiteFooter />
       </main>

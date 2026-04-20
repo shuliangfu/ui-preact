@@ -11,6 +11,8 @@ export type ContainerSize = "sm" | "md" | "lg" | "xl" | "2xl" | "full";
 export interface ContainerProps {
   /** 最大宽度预设，默认 "xl" */
   maxWidth?: ContainerSize;
+  /** 与 maxWidth 同义；同时传入时 size 优先 */
+  size?: ContainerSize;
   /** 是否水平居中，默认 true */
   centered?: boolean;
   /** 内边距，默认 true */
@@ -35,12 +37,14 @@ const maxWidthClasses: Record<ContainerSize, string> = {
  */
 export function Container(props: ContainerProps): JSX.Element {
   const {
-    maxWidth = "xl",
+    size,
+    maxWidth: maxWidthProp,
     centered = true,
     padded = true,
     class: className,
     children,
   } = props;
+  const maxWidth = size ?? maxWidthProp ?? "xl";
 
   return (
     <div

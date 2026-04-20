@@ -19,13 +19,17 @@
 import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
 import {
+  createCommand,
   cwd,
   dirname,
   existsSync,
   fromFileUrl,
+  getEnv,
+  IS_DENO,
   join,
   mkdir,
   readdir,
+  readdirSync,
   readTextFile,
   relative,
   writeTextFile,
@@ -36,7 +40,7 @@ const PACKAGE_ROOT_MARKER = "src/mod.ts";
 
 /**
  * dweb `deno task build` 会把应用打进 `dist/server.js`，插件代码里的 `import.meta.url` 会落在 `…/dist/`，
- * 不再是 `ui-view/plugin.ts`。若仍用 `dirname(import.meta.url)` 作为包根，会得到 `docs/dist`，
+ * 不再是 `ui-preact/plugin.ts`。若仍用 `dirname(import.meta.url)` 作为包根，会得到 `docs/dist`，
  * 只会扫到构建产物里零散的 `dist/src/**`，`mergeIntrinsicIconSources` 也扫不全 icons，最终 @source 仅百余行。
  * 从进程 cwd 逐级向上查找同时存在 `plugin.ts` 与 `src/mod.ts` 的目录，即可在 dev 与 build 下都得到真实包根。
  *
@@ -61,7 +65,483 @@ function findUiPreactPackageRootFromCwd(): string | null {
 }
 
 /**
- * 解析到的目录是否像真实的 ui-view 源码根（含完整 `src/shared`），而非误选的 `dist`。
+ * 本插件文件所在目录：仅当 `import.meta.url` 为 `file:` 时可转为本地路径。
+ * 从 **JSR** 加载时 URL 为 `https:`，若调用 `fromFileUrl(import.meta.url)` 会抛出 `ERR_INVALID_URL_SCHEME`，故必须先判断协议。
+ *
+ * @returns `file:` 时为目录绝对路径，否则 `undefined`
+ */
+function dirnameOfThisPluginIfFileUrl(): string | undefined {
+  try {
+    const u = new URL(import.meta.url);
+    if (u.protocol !== "file:") {
+      return undefined;
+    }
+    return dirname(fromFileUrl(u));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 去掉 Deno CLI 写入 stdout 的 ANSI 颜色序列（如 `deno info` 首行常为 `\x1b[1mlocal:\x1b[0m`），
+ * 否则 `^local:` 正则无法匹配，`parseFirstLocalLineFromDenoInfo` 会得到 `null`。
+ *
+ * @param text - 子进程捕获的原始输出
+ */
+function stripAnsiSequences(text: string): string {
+  /** ESC (0x1B) + `[` + SGR 序列；用 `RegExp` 构造避免 deno lint `no-control-regex` */
+  const esc = String.fromCharCode(0x1b);
+  return text.replace(new RegExp(`${esc}\\[[\\d;]*m`, "g"), "");
+}
+
+/**
+ * `deno info <https://jsr.io/...>` 输出首行 `local: /path` 的本地缓存路径（多为 `remote/https/jsr.io/<hash>`）。
+ * 调用方须先经 {@link stripAnsiSequences}（由 {@link runDenoInfo} 统一处理）。
+ *
+ * @param text - `deno info` 标准输出全文（已无 ANSI）
+ * @returns 去掉首尾空白的绝对路径；未匹配时返回 `null`
+ */
+function parseFirstLocalLineFromDenoInfo(text: string): string | null {
+  const m = text.match(/^local:\s*(.+)$/m);
+  return m?.[1]?.trim() ?? null;
+}
+
+/**
+ * 从 `deno info jsr:@dreamer/ui-preact` 依赖树文本中解析**应用当前解析到的**包版本（与 deno.json / lock 一致）。
+ *
+ * @param text - `deno info jsr:@dreamer/ui-preact` 的 stdout
+ */
+function parseUiPreactVersionFromDenoInfoStdout(text: string): string | null {
+  const m = text.match(/https:\/\/jsr\.io\/@dreamer\/ui-preact\/([^/\s]+)\//);
+  return m?.[1] ?? null;
+}
+
+/** 避免同一 `onInit` 内对同一 `https://jsr.io/...` URL 重复执行 `deno info` */
+const denoInfoHttpsToLocalCache = new Map<string, string>();
+
+/**
+ * 在应用根目录下执行 `deno info`，供解析 JSR 模块在 `$DENO_DIR` 中的真实路径。
+ *
+ * @param projectRoot - `cwd()` 应用根（须能加载该应用的 deno.json）
+ * @param args - 一般为 `["info", "jsr:@dreamer/ui-preact"]` 或 `["info", "https://jsr.io/..."]`
+ */
+async function runDenoInfo(
+  projectRoot: string,
+  args: string[],
+): Promise<string | null> {
+  if (!IS_DENO) {
+    return null;
+  }
+  const cmd = createCommand("deno", {
+    args,
+    cwd: projectRoot,
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const out = await cmd.output();
+  if (!out.success) {
+    return null;
+  }
+  return stripAnsiSequences(new TextDecoder().decode(out.stdout));
+}
+
+/**
+ * 解析宿主应用当前使用的 `@dreamer/ui-preact` **版本号**（优先 `deno info jsr:@dreamer/ui-preact` 依赖树，其次插件 `import.meta.url`）。
+ *
+ * @param projectRoot - 应用根
+ * @param pluginImportMetaUrl - 本插件 `import.meta.url`
+ */
+async function getUiPreactJsrVersionResolvedByApp(
+  projectRoot: string,
+  pluginImportMetaUrl: string,
+): Promise<string | null> {
+  const tree = await runDenoInfo(projectRoot, [
+    "info",
+    "jsr:@dreamer/ui-preact",
+  ]);
+  if (tree) {
+    const v = parseUiPreactVersionFromDenoInfoStdout(tree);
+    if (v) {
+      return v;
+    }
+  }
+  return extractJsrIoDreamerUiPreactVersion(pluginImportMetaUrl);
+}
+
+/**
+ * 将 `https://jsr.io/@dreamer/ui-preact/<version>/<rel>` 对应模块解析为 Deno 缓存中的本地绝对路径。
+ *
+ * **背景**：Deno 文档中 `import.meta.resolve` **仅支持单参数**，且对 `jsr:` 裸说明符不会解析为 `file:`；
+ * 双参数在 Deno 中会 `TypeError: Invalid arguments`。故采用与 CLI 一致的 `deno info <https URL>` 解析 `local:` 行。
+ *
+ * @param projectRoot - 应用根（`deno info` 的 cwd）
+ * @param rel - 包内相对路径，如 `src/shared/basic/Link.tsx`
+ * @param version - `getUiPreactJsrVersionResolvedByApp` 结果；为 `null` 时本函数直接返回 `null`
+ */
+async function tryResolveUiPreactRelViaDenoInfo(
+  projectRoot: string,
+  rel: string,
+  version: string | null,
+): Promise<string | null> {
+  if (!version) return null;
+  const httpsUrl = `https://jsr.io/@dreamer/ui-preact/${version}/${rel}`;
+  const cached = denoInfoHttpsToLocalCache.get(httpsUrl);
+  if (cached && existsSync(cached)) {
+    return cached;
+  }
+  const stdout = await runDenoInfo(projectRoot, ["info", httpsUrl]);
+  if (!stdout) return null;
+  const local = parseFirstLocalLineFromDenoInfo(stdout);
+  if (local && existsSync(local)) {
+    denoInfoHttpsToLocalCache.set(httpsUrl, local);
+    return local;
+  }
+  return null;
+}
+
+/**
+ * 根据用到的组件名，得到应加入 @source 的**已解析**绝对路径列表（去重排序）。
+ * 优先使用「显式 packageRoot / 自动探测包根」下 `join(rel)` **且文件存在**的路径；
+ * 否则在 Deno 下通过 {@link tryResolveUiPreactRelViaDenoInfo} 解析哈希缓存路径。
+ *
+ * @param usedNames - 从业务源码解析出的组件符号
+ * @param ctx - 项目根、可选包根、自动解析的包根、JSR 版本
+ */
+async function gatherResolvedContentPaths(
+  usedNames: string[],
+  ctx: {
+    projectRoot: string;
+    optionPackageRoot: string | undefined;
+    resolvedPackageRoot: string;
+    jsrVersion: string | null;
+  },
+): Promise<string[]> {
+  const seen = new Set<string>();
+  const out: string[] = [];
+
+  const tryJoinIfExists = (root: string, rel: string): string | null => {
+    const trimmed = root.replace(/\/+$/, "");
+    const full = join(trimmed, rel);
+    return existsSync(full) ? full : null;
+  };
+
+  const optRoot = ctx.optionPackageRoot
+    ? (ctx.optionPackageRoot.startsWith("/")
+      ? ctx.optionPackageRoot
+      : join(ctx.projectRoot, ctx.optionPackageRoot))
+    : undefined;
+
+  for (const name of usedNames) {
+    const rels = COMPONENT_PATHS[name];
+    if (!rels) continue;
+    for (const rel of rels) {
+      let abs: string | null = null;
+      if (optRoot) {
+        abs = tryJoinIfExists(optRoot, rel);
+      }
+      if (!abs) {
+        abs = tryJoinIfExists(ctx.resolvedPackageRoot, rel);
+      }
+      if (!abs) {
+        abs = await tryResolveUiPreactRelViaDenoInfo(
+          ctx.projectRoot,
+          rel,
+          ctx.jsrVersion,
+        );
+      }
+      if (!abs) {
+        continue;
+      }
+      if (seen.has(abs)) continue;
+      seen.add(abs);
+      out.push(abs);
+    }
+  }
+  return out.sort();
+}
+
+/**
+ * 从本插件的 `import.meta.url`（如 `https://jsr.io/@dreamer/ui-preact/1.0.2-beta.1/plugin.ts`）解析出版本号，
+ * 用于拼接 Deno 在 `node_modules/.deno` 下常见的目录名（如 `dreamer__ui-preact@1.0.2-beta.1`）。
+ *
+ * @param pluginImportMetaUrl - `plugin.ts` 的 `import.meta.url`
+ * @returns 版本字符串；非 jsr.io 或非本包路径时返回 `null`
+ */
+function extractJsrIoDreamerUiPreactVersion(
+  pluginImportMetaUrl: string,
+): string | null {
+  try {
+    const u = new URL(pluginImportMetaUrl);
+    if (u.hostname !== "jsr.io") return null;
+    const m = u.pathname.match(/^\/@dreamer\/ui-preact\/([^/]+)\//);
+    return m?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 宽松包根判定：Tailwind 扫描至少需要 `src/mod.ts` 与典型组件路径。
+ * 部分 `node_modules` 安装树里可能没有包根的 `plugin.ts`（与 `looksLikeUiPreactSourceRoot` 区分）。
+ *
+ * @param dir - 待检测的绝对路径
+ */
+function looksLikeUiPreactTailwindContentRoot(dir: string): boolean {
+  return existsSync(join(dir, PACKAGE_ROOT_MARKER)) &&
+    existsSync(join(dir, "src/shared/basic/Icon.tsx"));
+}
+
+/**
+ * 猜测本机 Deno 缓存根目录（`deno info` 里的 DENO_DIR），用于尽力从 `registries` 下解析已缓存的 JSR 包树。
+ * **非公开稳定 API**：不同 Deno 版本目录结构可能变化；仅作无 `vendor` / 无完整 `node_modules` 时的补充手段。
+ */
+function collectDenoDirGuesses(): string[] {
+  const out: string[] = [];
+  const push = (p: string | undefined) => {
+    if (p && !out.includes(p)) out.push(p);
+  };
+  push(getEnv("DENO_DIR"));
+  const home = getEnv("HOME") ?? getEnv("USERPROFILE");
+  if (home) {
+    push(join(home, "Library", "Caches", "deno"));
+    push(join(home, ".cache", "deno"));
+  }
+  const xdg = getEnv("XDG_CACHE_HOME");
+  if (xdg) push(join(xdg, "deno"));
+  const local = getEnv("LOCALAPPDATA");
+  if (local) push(join(local, "deno"));
+  return out;
+}
+
+/**
+ * 在 `$DENO_DIR/registries` 下做有预算的 DFS，查找含 `src/mod.ts` 的 ui-preact 包根。
+ * 供「纯 jsr、不开 vendor」时尽力命中本机已缓存的源码树；不保证每台机器都能命中。
+ *
+ * @returns 包根绝对路径；未找到返回 `null`
+ */
+function tryResolveUiPreactFromDenoRegistriesCache(): string | null {
+  const isHit = (p: string): boolean =>
+    looksLikeUiPreactSourceRoot(p) || looksLikeUiPreactTailwindContentRoot(p);
+
+  for (const denoDir of collectDenoDirGuesses()) {
+    const reg = join(denoDir, "registries");
+    if (!existsSync(reg)) continue;
+    let budget = 8000;
+    /** 使用箭头函数避免 `no-inner-declarations`（内层 `function dfs` 违反 lint） */
+    const dfs = (dir: string, depth: number): string | null => {
+      if (budget <= 0 || depth > 14) return null;
+      budget--;
+      if (isHit(dir)) return dir;
+      const low = dir.toLowerCase();
+      /** 浅层全展开；深处仅跟进路径上像 JSR / dreamer / ui-preact 的目录，控制遍历量 */
+      const broad = depth <= 3;
+      const narrow = low.includes("dreamer") ||
+        low.includes("ui-preact") ||
+        low.includes("jsr.io") ||
+        low.includes("@dreamer");
+      if (!broad && !narrow) return null;
+      try {
+        for (const e of readdirSync(dir)) {
+          if (!e.isDirectory || e.name === ".bin") continue;
+          const h = dfs(join(dir, e.name), depth + 1);
+          if (h) return h;
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    };
+    const hit = dfs(reg, 0);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/**
+ * 在单个 `node_modules/.deno/<存根>/` 子树下做有预算的深度优先搜索，命中 `looksLikeUiPreactSourceRoot` 或 {@link looksLikeUiPreactTailwindContentRoot} 即返回。
+ * Deno 可能把 `@jsr/dreamer__ui-preact` 挂在多层 `node_modules` 之下，仅靠固定两级路径会失败（与你日志里「.deno 子目录多但仍 null」一致）。
+ *
+ * @param stashRoot - 一般为 `node_modules/.deno/<某个子目录>`
+ * @param budget - 共享递减计数，防止整盘 `node_modules` 遍历过久
+ * @param maxDepth - 单链最大深度
+ * @returns 包根目录；未找到返回 `null`
+ */
+function tryFindUiPreactPackageInDenoStashSubtree(
+  stashRoot: string,
+  budget: { n: number },
+  maxDepth: number,
+): string | null {
+  const isHit = (dir: string): boolean =>
+    looksLikeUiPreactSourceRoot(dir) ||
+    looksLikeUiPreactTailwindContentRoot(dir);
+
+  function walk(dir: string, depth: number): string | null {
+    if (budget.n <= 0 || depth > maxDepth) return null;
+    budget.n--;
+    if (isHit(dir)) return dir;
+    let list;
+    try {
+      list = readdirSync(dir);
+    } catch {
+      return null;
+    }
+    /** 优先进入与 ui-preact / JSR 相关的目录名，更快命中 */
+    const dirs = list.filter((e) => e.isDirectory && e.name !== ".bin").sort(
+      (a, b) => {
+        const rank = (name: string): number =>
+          /ui-preact|dreamer__ui-preact|@jsr|@dreamer|jsr/i.test(name)
+            ? 0
+            : name === "node_modules"
+            ? 1
+            : 2;
+        return rank(a.name) - rank(b.name);
+      },
+    );
+    for (const e of dirs) {
+      const hit = walk(join(dir, e.name), depth + 1);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  return walk(stashRoot, 0);
+}
+
+/**
+ * 在应用根目录的 `node_modules` / `vendor` 下解析 `@dreamer/ui-preact` 包根（存在 `src/mod.ts`）。
+ *
+ * **背景**：纯 `jsr:` 依赖在 Deno 2 中往往**不会**在顶层出现带完整 `src/` 的 `node_modules/@jsr/dreamer__ui-preact`；
+ * `nodeModulesDir: "auto"` 时更常见的是 `node_modules/.deno/<包说明@版本>/node_modules/@jsr/dreamer__ui-preact`。
+ * 因此除顶层两路径外，还须按版本拼 `.deno` 候选目录，并**枚举** `.deno` 下各子目录的 `node_modules/@jsr|@dreamer`。
+ *
+ * @param projectRoot - 一般为应用 `cwd()`
+ * @param pluginImportMetaUrl - 本插件模块的 `import.meta.url`（https 时用于解析版本）
+ * @returns 包根绝对路径；未找到时 `null`
+ */
+function tryResolveUiPreactPackageRootFromNodeModules(
+  projectRoot: string,
+  pluginImportMetaUrl: string,
+): string | null {
+  /** 严格或宽松包根均可（见 {@link looksLikeUiPreactTailwindContentRoot}） */
+  const tryDir = (dir: string): string | null =>
+    looksLikeUiPreactSourceRoot(dir) ||
+      looksLikeUiPreactTailwindContentRoot(dir)
+      ? dir
+      : null;
+
+  const direct = [
+    join(projectRoot, "node_modules", "@jsr", "dreamer__ui-preact"),
+    join(projectRoot, "node_modules", "@dreamer", "ui-preact"),
+  ];
+  for (const dir of direct) {
+    const hit = tryDir(dir);
+    if (hit) return hit;
+  }
+
+  /**
+   * `deno.json` 设 `vendor: true` 时，常见布局是 `vendor/jsr.io/@dreamer/ui-preact`（包根下直接是 `src/`，**未必**还有 `/<version>` 子目录）。
+   * 须先于仅带版本号的路径探测，否则会一直「无标记」。
+   */
+  const vendorEarly = [
+    join(projectRoot, "vendor", "jsr.io", "@dreamer", "ui-preact"),
+    join(projectRoot, "vendor", "@dreamer", "ui-preact"),
+  ];
+  for (const vr of vendorEarly) {
+    const hitRoot = tryDir(vr);
+    if (hitRoot) return hitRoot;
+    if (!existsSync(vr)) continue;
+    try {
+      for (const e of readdirSync(vr)) {
+        if (!e.isDirectory) continue;
+        const hitChild = tryDir(join(vr, e.name));
+        if (hitChild) return hitChild;
+      }
+    } catch {
+      /** 忽略无读权限 */
+    }
+  }
+
+  const ver = extractJsrIoDreamerUiPreactVersion(pluginImportMetaUrl);
+  if (ver) {
+    const versionedHints = [
+      join(
+        projectRoot,
+        "node_modules",
+        ".deno",
+        `dreamer__ui-preact@${ver}`,
+        "node_modules",
+        "@jsr",
+        "dreamer__ui-preact",
+      ),
+      join(
+        projectRoot,
+        "node_modules",
+        ".deno",
+        `@jsr+dreamer__ui-preact@${ver}`,
+        "node_modules",
+        "@jsr",
+        "dreamer__ui-preact",
+      ),
+      join(
+        projectRoot,
+        "node_modules",
+        ".deno",
+        `dreamer__ui-preact@${ver}`,
+        "node_modules",
+        "@dreamer",
+        "ui-preact",
+      ),
+      join(projectRoot, "vendor", "jsr.io", "@dreamer", "ui-preact", ver),
+      join(projectRoot, "vendor", "@dreamer", "ui-preact", ver),
+    ];
+    for (const dir of versionedHints) {
+      const hit = tryDir(dir);
+      if (hit) return hit;
+    }
+  }
+
+  const denoNm = join(projectRoot, "node_modules", ".deno");
+  if (!existsSync(denoNm)) return null;
+  try {
+    for (const entry of readdirSync(denoNm)) {
+      if (!entry.isDirectory) continue;
+      const nested = [
+        join(denoNm, entry.name, "node_modules", "@jsr", "dreamer__ui-preact"),
+        join(denoNm, entry.name, "node_modules", "@dreamer", "ui-preact"),
+      ];
+      for (const dir of nested) {
+        const hit = tryDir(dir);
+        if (hit) return hit;
+      }
+    }
+    /** 固定两级仍找不到时：在每个 `.deno` 子目录下做有限 DFS（Deno 实际嵌套可能更深） */
+    const budget = { n: 28000 };
+    const tops = readdirSync(denoNm).filter((e) => e.isDirectory);
+    tops.sort((a, b) => {
+      const rank = (name: string): number =>
+        /ui-preact|dreamer__ui-preact/i.test(name)
+          ? 0
+          : /jsr|dreamer/i.test(name)
+          ? 1
+          : 2;
+      return rank(a.name) - rank(b.name);
+    });
+    for (const entry of tops) {
+      if (budget.n <= 0) break;
+      const hit = tryFindUiPreactPackageInDenoStashSubtree(
+        join(denoNm, entry.name),
+        budget,
+        20,
+      );
+      if (hit) return hit;
+    }
+  } catch {
+    /** 无读权限或目录中途变化时忽略 */
+  }
+  return null;
+}
+
+/**
+ * 解析到的目录是否像真实的 ui-preact 源码根（含完整 `src/shared`），而非误选的 `dist`。
  *
  * @param dir - 待检测的绝对路径
  */
@@ -93,7 +573,7 @@ export interface UiPreactTailwindContentPluginOptions {
  * - DatePicker / DateTimePicker / TimePicker 依赖 `picker-portal-utils.ts` 中的 `pickerTimeListScrollClass`（含隐藏滚动条、列宽等任意类），须一并扫描，否则按需构建会丢样式。
  * - RichTextEditor 从同文件引用 `getFormPortalBodyHost`，若需该文件内其它类名亦须映射。
  * - MarkdownEditor 使用 `@dreamer/markdown` 的 `parse` 与桌面 `Tooltip`；须映射 `MarkdownEditor.tsx`、`Tooltip.tsx`、`input-focus-ring.ts`。
- * - 单文件图标（`icons/*.tsx`）、`Calendar.tsx`、`ChartBase.tsx` 等被组件 import 时须写入对应组件的路径列表；`getContentPaths` 会去重。
+ * - 单文件图标（`icons/*.tsx`）、`Calendar.tsx`、`ChartBase.tsx` 等被组件 import 时须写入对应组件的路径列表；`gatherResolvedContentPaths` 会去重。
  * - 纯函数 / store（message、toast、getConfig 等）不含 Tailwind class，无需映射。
  * - `desktop/form`、`mobile/form` 下若仅为 `export * from ../../shared/form/...` 的薄再导出，只列 **shared 实现文件** 即可，不必重复写 D/M 路径。
  */
@@ -141,7 +621,7 @@ const COMPONENT_PATHS: Record<string, string[]> = {
     "src/desktop/feedback/Popover.tsx",
   ],
   "Tooltip": [
-    "src/shared/feedback/Tooltip.tsx",
+    "src/desktop/feedback/Tooltip.tsx",
   ],
   "Cascader": [
     "src/shared/form/Cascader.tsx",
@@ -487,7 +967,7 @@ const COMPONENT_PATHS: Record<string, string[]> = {
   /** 工具栏与 RichTextEditor 同款样式类 + Tooltip；运行时依赖 `jsr:@dreamer/markdown` */
   "MarkdownEditor": [
     "src/shared/form/MarkdownEditor.tsx",
-    "src/shared/feedback/Tooltip.tsx",
+    "src/desktop/feedback/Tooltip.tsx",
     "src/shared/form/input-focus-ring.ts",
   ],
   "Password": [
@@ -653,31 +1133,16 @@ function extractUsedNames(content: string): string[] {
   return Array.from(names);
 }
 
-/** 根据用到的组件名和包根，得到应加入 @source 的绝对路径列表（去重排序） */
-function getContentPaths(usedNames: string[], packageRoot: string): string[] {
-  const root = packageRoot.replace(/\/+$/, "");
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const name of usedNames) {
-    const paths = COMPONENT_PATHS[name];
-    if (!paths) continue;
-    for (const rel of paths) {
-      const full = `${root}/${rel}`.replace(/\/+/g, "/");
-      if (seen.has(full)) continue;
-      seen.add(full);
-      out.push(full);
-    }
-  }
-  return out.sort();
-}
-
 /**
  * 内置图标以 `IconXxx` 单独导出、文件分散在 icons/ 子目录；不可能在 COMPONENT_PATHS 中逐一手写。
  * 若扫描结果中出现任意 `Icon` 前缀组件名，则递归加入 `src/shared/basic/icons` 下全部 `.tsx` 供 Tailwind 收集 class。
  *
+ * **注意**：仅当 `packageRoot` 下存在真实的 `src/shared/basic/icons/Icon.tsx`（可列目录）时才递归；
+ * JSR 哈希缓存下无「icons 目录」语义，递归会失败或误扫海量无关文件，此时跳过整目录合并。
+ *
  * @param usedNames - 从项目源码提取的具名导入符号
- * @param packageRoot - ui-view 包根绝对路径
- * @param paths - getContentPaths 结果，本函数会原地追加并重新排序
+ * @param packageRoot - ui-preact 包根绝对路径（可能来自探测，未必为真实磁盘树）
+ * @param paths - gatherResolvedContentPaths 结果，本函数会原地追加并重新排序
  */
 async function mergeIntrinsicIconSources(
   usedNames: Iterable<string>,
@@ -692,7 +1157,13 @@ async function mergeIntrinsicIconSources(
     }
   }
   if (!anyIcon) return;
+
   const iconRoot = join(packageRoot, "src/shared/basic/icons");
+  const iconEntry = join(iconRoot, "Icon.tsx");
+  if (!existsSync(iconEntry)) {
+    return;
+  }
+
   const iconFiles: string[] = [];
   try {
     await collectTsTsx(iconRoot, iconRoot, iconFiles);
@@ -709,11 +1180,11 @@ async function mergeIntrinsicIconSources(
 }
 
 /**
- * 将组件源码绝对路径转为写入 `ui-view-sources.css` 的 `@source` 引用串。
+ * 将组件源码绝对路径转为写入 `ui-preact-sources.css`（或业务自定义 outputPath）的 `@source` 引用串。
  * Tailwind v4 按「当前 CSS 文件所在目录」解析相对路径；若写入本机绝对路径（如 `/Users/...`），
  * 在其它机器或 CI（路径不同）上 `deno task build` 会找不到文件或 Tailwind 报错。
  *
- * @param sourcesCssDir - 生成的 `ui-view-sources.css` 所在目录（绝对路径）
+ * @param sourcesCssDir - 生成的 `@source` 聚合 CSS 所在目录（绝对路径）
  * @param absFilePath - 待扫描的 `.ts`/`.tsx` 绝对路径
  * @returns 以 `./` 或 `../` 开头的相对路径（正斜杠）
  */
@@ -737,10 +1208,65 @@ function toAtSourceSpecifier(
 }
 
 /**
- * 创建 ui-view Tailwind 按需 content 插件
+ * 将异常转为可读的纯文本，便于日志里出现「message + stack」，避免宿主只 `JSON.stringify(error)` 得到 `{}`。
+ *
+ * @param e - 任意 throw 值
+ * @returns 多行字符串，含 `Error.message` 与 `stack`（若有）
+ */
+function formatPluginError(e: unknown): string {
+  if (e instanceof Error) {
+    return e.stack ?? `${e.name}: ${e.message}`;
+  }
+  if (e !== null && typeof e === "object") {
+    try {
+      return JSON.stringify(e);
+    } catch {
+      return Object.prototype.toString.call(e);
+    }
+  }
+  return String(e);
+}
+
+/** 宿主注入的 logger 形态（可能含 error，用于与 dweb 对齐） */
+type UiPreactTailwindLogger = {
+  info: (msg: string) => void;
+  debug: (msg: string) => void;
+  error?: (msg: string, ...args: unknown[]) => void;
+};
+
+/**
+ * 统一本插件在 onInit 中的日志出口：**info** 在宿主注入 logger 时只调用 `logger.info`（避免与 `console.info` 各打一行、内容重复）；
+ * 无 logger 时再回退到 `console.info`（例如无容器的脚本场景）。
+ * **debug** 已关闭（避免刷屏）；保留方法便于将来按需接回 `logger.debug`。
+ *
+ * @param logger - dweb 等服务容器中的 logger，可为 undefined
+ * @returns 带 `info` / `debug` 的轻量对象
+ */
+function createUiPreactTailwindPluginLog(
+  logger: UiPreactTailwindLogger | undefined,
+): { info: (msg: string) => void; debug: (msg: string) => void } {
+  const tag = "[ui-preact-tailwind]";
+  return {
+    info(msg: string): void {
+      const line = `${tag} ${msg}`;
+      if (logger) {
+        logger.info(line);
+      } else {
+        console.info(line);
+      }
+    },
+    /** 调试日志已移除，刻意为空 */
+    debug(_msg: string): void {
+      void _msg;
+    },
+  };
+}
+
+/**
+ * 创建 ui-preact Tailwind 按需 content 插件
  *
  * 参数：outputPath（生成文件路径）、scanPath（扫描目录）、packageRoot（可选）。
- * 在 onInit 时即扫描导入的 ui-view 组件，生成只含 @source 的 CSS，Tailwind 扫描该文件即可收集 class。
+ * 在 onInit 时即扫描导入的 ui-preact 组件，生成只含 @source 的 CSS，Tailwind 扫描该文件即可收集 class。
  */
 export function uiPreactTailwindPlugin(
   options: UiPreactTailwindContentPluginOptions,
@@ -751,92 +1277,181 @@ export function uiPreactTailwindPlugin(
     packageRoot: optionPackageRoot,
   } = options;
 
+  /**
+   * 解析 @dreamer/ui-preact 包根：本地 file → cwd 向上找仓库 → `node_modules/@jsr/dreamer__ui-preact`（JSR 安装树）。
+   */
   const resolvePackageRoot = (): string => {
+    const root = cwd();
+
     if (optionPackageRoot) {
       return optionPackageRoot.startsWith("/")
         ? optionPackageRoot
-        : join(cwd(), optionPackageRoot);
+        : join(root, optionPackageRoot);
     }
-    const fromMeta = dirname(fromFileUrl(import.meta.url));
-    if (looksLikeUiPreactSourceRoot(fromMeta)) {
-      return fromMeta;
+    /** 本地 file 映射 / 工作区：`import.meta.url` 为 file:// */
+    const fromFileDir = dirnameOfThisPluginIfFileUrl();
+    if (fromFileDir != null && looksLikeUiPreactSourceRoot(fromFileDir)) {
+      return fromFileDir;
     }
+    /** 在 ui-preact 仓库内跑 docs：cwd 向上能碰到 plugin.ts + src/mod.ts */
     const fromCwd = findUiPreactPackageRootFromCwd();
     if (fromCwd != null) {
       return fromCwd;
     }
-    return fromMeta;
+    /** 从 JSR + `nodeModulesDir: auto`：完整树常在 `node_modules/.deno/.../node_modules/@jsr/dreamer__ui-preact` */
+    const fromNm = tryResolveUiPreactPackageRootFromNodeModules(
+      root,
+      import.meta.url,
+    );
+    if (fromNm != null) {
+      return fromNm;
+    }
+    /** 无 `vendor: true` 时：尽力从本机 `DENO_DIR/registries` 命中已缓存的 JSR 源码树（不保证每台机器都有） */
+    const fromReg = tryResolveUiPreactFromDenoRegistriesCache();
+    if (fromReg != null) {
+      return fromReg;
+    }
+    if (fromFileDir != null) {
+      return fromFileDir;
+    }
+    /**
+     * Deno 下纯 JSR 且无源码树时：`gatherResolvedContentPaths` 会用 `deno info https://jsr.io/...` 解析各文件的哈希缓存路径，
+     * 此处仅需一个用于 `join(rel)` 尝试与 `mergeIntrinsicIconSources` 的占位根；用 cwd 即可（icons 全量扫描会因无 Icon.tsx 而跳过）。
+     */
+    if (IS_DENO) {
+      return root;
+    }
+    throw new Error(
+      `[ui-preact-tailwind] 无法解析 @dreamer/ui-preact 包根（cwd=${root}）。请设置 packageRoot、使用 vendor/npm 安装树，或在 Deno 下使用 jsr: 依赖。import.meta.url=${import.meta.url}`,
+    );
   };
 
   return {
-    name: "ui-preact-tailwind-content",
+    name: "ui-preact-tailwind",
     version: "0.1.0",
 
     async onInit(container: ServiceContainer): Promise<void> {
-      const logger = container.tryGet<
-        { info: (msg: string) => void; debug: (msg: string) => void }
-      >(
-        "logger",
-      );
+      const logger = container.tryGet<UiPreactTailwindLogger>("logger");
+      const log = createUiPreactTailwindPluginLog(logger);
+
+      /**
+       * 输出本插件内的失败详情：与 {@link createUiPreactTailwindPluginLog} 一致，有 logger 时只走 logger（避免与 stderr 重复一行）。
+       *
+       * @param phase - 阶段说明
+       * @param e - 异常对象
+       * @param ctx - 额外上下文（cwd、路径等）
+       */
+      const logInitFailure = (
+        phase: string,
+        e: unknown,
+        ctx?: Record<string, string>,
+      ): void => {
+        const ctxLines = ctx
+          ? Object.entries(ctx).map(([k, v]) => `${k}=${v}`).join("\n")
+          : "";
+        const text = `[ui-preact-tailwind] ${phase}${
+          ctxLines ? `\n上下文:\n${ctxLines}` : ""
+        }\n${formatPluginError(e)}`;
+        if (logger?.error) {
+          logger.error(text);
+        } else if (logger) {
+          logger.info(text);
+        } else {
+          console.error(text);
+        }
+      };
+
       const root = cwd();
-      const scanDir = join(root, scanPath);
+      const scanDirAbs = join(root, scanPath);
 
-      const files: string[] = [];
       try {
-        await collectTsTsx(scanDir, scanDir, files);
-      } catch (e) {
-        if (logger) {
-          logger.info(`[ui-preact-tailwind-content] 扫描目录跳过: ${e}`);
-        }
-        return;
-      }
-
-      const usedNames = new Set<string>();
-      for (const filePath of files) {
+        const files: string[] = [];
         try {
-          const content = await readTextFile(filePath);
-          for (const name of extractUsedNames(content)) {
-            usedNames.add(name);
-          }
-        } catch {
-          // ignore
-        }
-      }
-
-      const names = Array.from(usedNames);
-      if (names.length === 0) {
-        if (logger) {
-          logger.info(
-            "[ui-preact-tailwind-content] 未发现 @dreamer/ui-preact 引用，跳过生成",
+          await collectTsTsx(scanDirAbs, scanDirAbs, files);
+        } catch (e) {
+          log.info(
+            `扫描目录失败，跳过生成（不会抛错）。scanDir=${scanDirAbs}\n${
+              formatPluginError(e)
+            }`,
           );
+          return;
         }
-        return;
-      }
 
-      const pkgRoot = resolvePackageRoot();
-      const paths = getContentPaths(names, pkgRoot);
-      await mergeIntrinsicIconSources(names, pkgRoot, paths);
-      /** 与 getContentPaths / mergeIntrinsicIconSources 内去重双保险，保证写入的 @source 路径唯一 */
-      const uniqueSortedPaths = Array.from(new Set(paths)).sort();
+        const usedNames = new Set<string>();
+        let readFailCount = 0;
+        for (const filePath of files) {
+          try {
+            const content = await readTextFile(filePath);
+            for (const name of extractUsedNames(content)) {
+              usedNames.add(name);
+            }
+          } catch {
+            readFailCount++;
+          }
+        }
+        if (readFailCount > 0) {
+          log.info(`解析导入时共有 ${readFailCount} 个文件读取失败（已忽略）`);
+        }
 
-      const outAbs = outputPath.startsWith("/")
-        ? outputPath
-        : join(root, outputPath);
-      const sourcesCssDir = dirname(outAbs);
-      const cssContent = uniqueSortedPaths
-        .map((p) => `@source "${toAtSourceSpecifier(sourcesCssDir, p)}";`)
-        .join("\n") + "\n";
+        const names = Array.from(usedNames).sort();
+        if (names.length === 0) {
+          log.info(
+            `未发现从 @dreamer/ui-preact 解析出的已映射组件名，跳过生成（请确认业务代码使用 import { X } from "@dreamer/ui-preact/..." 且 X 在插件映射表中）`,
+          );
+          return;
+        }
 
-      await mkdir(sourcesCssDir, { recursive: true });
-      await writeTextFile(outAbs, cssContent);
+        /** 每次 onInit 清空，避免跨应用/版本误用缓存 */
+        denoInfoHttpsToLocalCache.clear();
 
-      if (logger) {
-        logger.debug(
-          `[ui-preact-tailwind-content] 已生成 ${uniqueSortedPaths.length} 个`,
+        const jsrVersion = await getUiPreactJsrVersionResolvedByApp(
+          root,
+          import.meta.url,
         );
-        logger.debug(
-          `@source → ${outputPath}`,
-        );
+
+        const pkgRoot = resolvePackageRoot();
+
+        const paths = await gatherResolvedContentPaths(names, {
+          projectRoot: root,
+          optionPackageRoot: optionPackageRoot,
+          resolvedPackageRoot: pkgRoot,
+          jsrVersion,
+        });
+        if (paths.length === 0) {
+          log.info(
+            "未解析到任何可扫描的 ui-preact 源文件路径，跳过写入（请检查 deno.json、deno cache、outputPath 与组件映射）",
+          );
+          return;
+        }
+        await mergeIntrinsicIconSources(names, pkgRoot, paths);
+        /** 与 gatherResolvedContentPaths / mergeIntrinsicIconSources 内去重双保险，保证写入的 @source 路径唯一 */
+        const uniqueSortedPaths = Array.from(new Set(paths)).sort();
+
+        const outAbs = outputPath.startsWith("/")
+          ? outputPath
+          : join(root, outputPath);
+        const sourcesCssDir = dirname(outAbs);
+
+        const cssContent = uniqueSortedPaths
+          .map((p) => `@source "${toAtSourceSpecifier(sourcesCssDir, p)}";`)
+          .join("\n") + "\n";
+
+        /** 与历史版本一致：写入前后各一条 info（相对路径，避免绝对路径刷屏） */
+        const outRel = relative(root, outAbs);
+        log.info(`准备写入 ${outRel}（${cssContent.length} 字节）`);
+        await mkdir(sourcesCssDir, { recursive: true });
+        await writeTextFile(outAbs, cssContent);
+        log.info(`已写入 ${outRel}`);
+      } catch (e) {
+        logInitFailure("onInit 失败", e, {
+          cwd: root,
+          scanDirAbs,
+          outputPath,
+          scanPath,
+          packageRootOption: optionPackageRoot ?? "(未传)",
+          importMetaUrl: import.meta.url,
+        });
+        throw e;
       }
     },
   };

@@ -9,6 +9,9 @@
  * @see {@link ./ConfigProvider.tsx} 组件实现与 JSDoc
  */
 export { ConfigProvider } from "./ConfigProvider.tsx";
-export type { ConfigProviderProps } from "./ConfigProvider.tsx";
+export type {
+  ConfigProviderBatchConfig,
+  ConfigProviderProps,
+} from "./ConfigProvider.tsx";
 export { getConfig, setConfig } from "./config-store.ts";
 export type { ConfigProviderConfig, ThemeMode } from "./config-store.ts";

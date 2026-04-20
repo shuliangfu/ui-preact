@@ -176,6 +176,8 @@ export {
   IconLink,
   IconLink2,
   IconList,
+  IconLoader,
+  IconLoader2,
   IconLock,
   IconLogIn,
   IconLogOut,
