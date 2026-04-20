@@ -162,7 +162,12 @@ export default function MobileDocsLayout({ children, data }: LayoutProps) {
          * 正文区用 flex-auto，避免 flex-1 固定高度导致长文溢出叠在页脚上（同 desktop/_layout）。
          */
       }
-      <main class="flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-y-auto overscroll-y-contain px-3 py-6 sm:px-6 sm:py-8 lg:px-10">
+      {
+        /*
+         * 同 desktop/_layout：`z-10` 使主栏叠在侧栏上。
+         */
+      }
+      <main class="relative z-10 flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-y-auto overscroll-y-contain px-3 py-6 sm:px-6 sm:py-8 lg:px-10">
         <div class="flex flex-auto flex-col">{children}</div>
         <SiteFooter />
       </main>

@@ -178,6 +178,8 @@ export {
   IconLink,
   IconLink2,
   IconList,
+  IconLoader,
+  IconLoader2,
   IconLock,
   IconLogIn,
   IconLogOut,
@@ -626,6 +628,7 @@ export type {
 // config-provider
 export { ConfigProvider, getConfig, setConfig } from "./config-provider/mod.ts";
 export type {
+  ConfigProviderBatchConfig,
   ConfigProviderConfig,
   ConfigProviderProps,
   ThemeMode,

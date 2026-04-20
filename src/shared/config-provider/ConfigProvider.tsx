@@ -7,12 +7,21 @@ import type { ComponentChildren, JSX } from "preact";
 import { twMerge } from "tailwind-merge";
 import type { SizeVariant } from "../types.ts";
 import { setConfig } from "./config-store.ts";
-import type { ThemeMode } from "./config-store.ts";
+import type { ConfigProviderConfig, ThemeMode } from "./config-store.ts";
 
 export type { ConfigProviderConfig, ThemeMode } from "./config-store.ts";
 export { getConfig } from "./config-store.ts";
 
+/** `config` 批量参数；`themeMode` 与 store 中的 `theme` 同义 */
+export type ConfigProviderBatchConfig = Partial<
+  ConfigProviderConfig & {
+    themeMode?: ThemeMode;
+  }
+>;
+
 export interface ConfigProviderProps {
+  /** 批量配置；与顶层 theme / locale 等可同时使用，顶层优先 */
+  config?: ConfigProviderBatchConfig;
   /** 主题：light / dark / system */
   theme?: ThemeMode;
   /** 语言/地区，如 zh-CN、en-US */
@@ -27,18 +36,30 @@ export interface ConfigProviderProps {
   class?: string;
 }
 
+function resolveConfigProviderFields(props: ConfigProviderProps): {
+  theme: ThemeMode;
+  locale: string | undefined;
+  componentSize: SizeVariant | undefined;
+  prefixCls: string | undefined;
+} {
+  const batch = props.config;
+  const themeFromBatch = batch?.theme ?? batch?.themeMode;
+  const theme = props.theme ?? themeFromBatch ?? "light";
+  return {
+    theme,
+    locale: props.locale ?? batch?.locale,
+    componentSize: props.componentSize ?? batch?.componentSize,
+    prefixCls: props.prefixCls ?? batch?.prefixCls,
+  };
+}
+
 /**
  * ConfigProvider：包装子树并写入全局配置。
  */
 export function ConfigProvider(props: ConfigProviderProps): JSX.Element {
-  const {
-    theme = "light",
-    locale,
-    componentSize,
-    prefixCls,
-    children,
-    class: className,
-  } = props;
+  const { children, class: className } = props;
+  const { theme, locale, componentSize, prefixCls } =
+    resolveConfigProviderFields(props);
 
   setConfig({
     theme,

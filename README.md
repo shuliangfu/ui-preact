@@ -194,13 +194,10 @@ this file.
 
 ## Changelog
 
-**Latest: [1.0.0] — 2026-04-17**
+**Latest: [1.0.1] — 2026-04-20**
 
-- **Added:** First stable release of `@dreamer/ui-preact` (Preact 10 +
-  `@preact/signals`, parity with `@dreamer/ui-view` entry layout).
-- **Changed:** Explicit named barrel exports in root / `shared` / `desktop` /
-  `mobile` / `basic` `mod.ts`; explicit `Icon*` list in basic barrels;
-  desktop/mobile deltas avoid duplicate names with `shared`.
+- **Changed:** `Popover` / `Popconfirm` use body Portal + fixed alignment;
+  `Dropdown` downward-only placements and portal geometry updates.
 
 Full history: [CHANGELOG.md](./CHANGELOG.md).
 

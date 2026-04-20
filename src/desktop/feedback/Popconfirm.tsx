@@ -5,24 +5,36 @@
  *
  * **手写 JSX**：`open={sig.value}` 会在创建 VNode 时变成快照；须传 **`open={sig}`** 或零参 getter。
  *
- * **定位**：面板渲染在触发器外包的 `relative` 容器内，使用 `absolute` + placement 类定位，
- * 与触发器同属滚动子树，**容器或页面滚动时气泡随触发器移动**，无需 `createPortal` 与 `scroll` 同步。
- * 若祖先 `overflow: hidden`（或 `clip`）可能裁切面板，与常规下拉/气泡一致。
+ * **定位**：有 `document.body` 时面板经 {@link createPortal} 挂到 body 且 `position: fixed`，
+ * 由 {@link computePopFixedStyle} 对齐触发器，避免祖先 `overflow` 裁剪；打开期间 rAF 同步视口矩形。
+ * 无 body 时回退为包裹层内 `absolute`（与旧版一致）。
  *
  * 根层不挂全屏遮罩；点外部由 `document` 上 `click` 冒泡关闭。
  */
 
 import { Signal } from "@preact/signals";
 import type { ComponentChildren, JSX } from "preact";
-import { useCallback, useEffect, useRef } from "preact/hooks";
+import { createPortal } from "preact/compat";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "preact/hooks";
 import { twMerge } from "tailwind-merge";
 import { Button } from "../../shared/basic/Button.tsx";
 import {
   type ControlledOpenInput,
   readControlledOpenInput,
 } from "../../shared/feedback/controlled-open.ts";
-/** 按需：单文件图标，避免经 icons/mod 拉入全表 */
 import { IconHelpCircle } from "../../shared/basic/icons/HelpCircle.tsx";
+import { getBrowserBodyPortalHost } from "../../shared/feedback/portal-host.ts";
+import {
+  computePopFixedStyle,
+  type FullPopStylePlacement,
+  POP_FIXED_STYLE_RESET,
+} from "../../shared/feedback/popFixedStyle.ts";
 
 export type PopconfirmPlacement =
   | "top"
@@ -79,7 +91,7 @@ export interface PopconfirmProps {
 const POPCONFIRM_PANEL_ATTR = "data-dreamer-popconfirm-panel";
 
 /**
- * 相对包裹层内面板的 `absolute` 方位类（与触发器同滚动上下文，滚动时自然跟随）。
+ * 相对包裹层内面板的 `absolute` 方位类（无 Portal 回退路径）。
  */
 const placementClasses: Record<PopconfirmPlacement, string> = {
   top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
@@ -117,7 +129,7 @@ function popconfirmArrowClass(placement: PopconfirmPlacement): string {
 }
 
 /**
- * 气泡确认：受控打开、相对触发器定位，滚动时与触发器同步移动。
+ * 气泡确认：受控打开；默认 Portal 到 `body` 与触发器视口对齐。
  *
  * @param props - {@link PopconfirmProps}
  */
@@ -131,15 +143,21 @@ export function Popconfirm(props: PopconfirmProps): JSX.Element {
     placement = "top",
   } = props;
 
-  /** 渲染路径订阅 `open`（Signal / getter / 快照） */
   const isOpen = readControlledOpenInput(props.open);
 
   const triggerRef = useRef<HTMLElement | null>(null);
   const floatingRef = useRef<HTMLElement | null>(null);
+  const [portalFixedStyle, setPortalFixedStyle] = useState<
+    Record<string, string>
+  >({});
+
+  const portalHost = getBrowserBodyPortalHost();
+  const portalHostOk = portalHost != null;
+
+  const fullPlacement = placement as FullPopStylePlacement;
 
   /**
-   * 关闭浮层：若 `open` 为 **`Signal<boolean>`** 则写回 `false`（仅传 `open={sig}` 未配 `onOpenChange` 时也能关），
-   * 再调用 `onOpenChange(false)`。
+   * 关闭浮层：若 `open` 为 **`Signal<boolean>`** 则写回 `false`，再调用 `onOpenChange(false)`。
    */
   const requestClose = useCallback(() => {
     const o = props.open;
@@ -147,13 +165,11 @@ export function Popconfirm(props: PopconfirmProps): JSX.Element {
     onOpenChange?.(false);
   }, [props.open, onOpenChange]);
 
-  /** 确定：先业务回调再统一关闭 */
   const handleConfirm = () => {
     onConfirm?.();
     requestClose();
   };
 
-  /** 取消：先业务回调再统一关闭 */
   const handleCancel = () => {
     onCancel?.();
     requestClose();
@@ -169,9 +185,48 @@ export function Popconfirm(props: PopconfirmProps): JSX.Element {
   const posCls = placementClasses[placement];
 
   /**
-   * 打开期间：文档 `click` **冒泡**阶段判断区外关闭。
-   * 须在按钮 `click` 之后执行，故不用 `pointerdown` 捕获；双 rAF 后再监听，避免打开同一次点击误关。
+   * 同步 Portal 浮层 `fixed` 位置（打开期间由 rAF / resize 驱动）。
    */
+  const syncPortalPosition = useCallback(() => {
+    const el = triggerRef.current;
+    if (el == null) return;
+    setPortalFixedStyle({
+      ...POP_FIXED_STYLE_RESET,
+      ...computePopFixedStyle(el.getBoundingClientRect(), fullPlacement),
+    });
+  }, [fullPlacement]);
+
+  useLayoutEffect(() => {
+    if (isOpen && portalHostOk) {
+      syncPortalPosition();
+    }
+  }, [isOpen, portalHostOk, syncPortalPosition]);
+
+  useEffect(() => {
+    if (!isOpen || !portalHostOk) {
+      setPortalFixedStyle({});
+      return;
+    }
+    let running = true;
+    let rafLoop = 0;
+    const keepAligned = () => {
+      if (!running) return;
+      syncPortalPosition();
+      rafLoop = globalThis.requestAnimationFrame(keepAligned);
+    };
+    rafLoop = globalThis.requestAnimationFrame(keepAligned);
+    const onResize = () => syncPortalPosition();
+    globalThis.window.addEventListener("resize", onResize);
+    const vv = globalThis.visualViewport;
+    vv?.addEventListener("resize", onResize);
+    return () => {
+      running = false;
+      globalThis.cancelAnimationFrame(rafLoop);
+      globalThis.window.removeEventListener("resize", onResize);
+      vv?.removeEventListener("resize", onResize);
+    };
+  }, [isOpen, portalHostOk, syncPortalPosition]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -226,6 +281,48 @@ export function Popconfirm(props: PopconfirmProps): JSX.Element {
 
   const arrowCls = arrow ? popconfirmArrowClass(placement) : "";
 
+  /**
+   * 面板内容区：问号 + 文案 + 按钮；`data-*` 供区外点击判断。
+   */
+  const panelBody = (
+    <>
+      <div class="flex gap-2">
+        {showIcon && (
+          <span class={twMerge("shrink-0 mt-0.5", iconToneCls)}>
+            <IconHelpCircle class="w-4 h-4" />
+          </span>
+        )}
+        <div class="flex-1">
+          <div class="text-sm mb-3">{title}</div>
+          <div class="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant={okVariant}
+              size="sm"
+              onClick={(_e: Event) => handleConfirm()}
+            >
+              {okText}
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={(_e: Event) => handleCancel()}
+            >
+              {cancelText}
+            </Button>
+          </div>
+        </div>
+      </div>
+      {arrow && <span class={arrowCls} aria-hidden="true" />}
+    </>
+  );
+
+  const overlayBoxClass = twMerge(
+    "pointer-events-auto min-w-[200px] max-w-[min(24rem,calc(100vw-1rem))] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg text-slate-900 dark:text-slate-100 p-3 box-border",
+    overlayClass,
+  );
+
   return (
     <span
       ref={(el) => {
@@ -234,7 +331,21 @@ export function Popconfirm(props: PopconfirmProps): JSX.Element {
       class={twMerge("relative inline-flex", className)}
     >
       {children}
-      {isOpen && (
+      {isOpen && portalHostOk && portalHost != null &&
+        createPortal(
+          <span
+            ref={(el) => {
+              floatingRef.current = el;
+            }}
+            data-dreamer-popconfirm-panel=""
+            class={twMerge("fixed z-1065", overlayBoxClass)}
+            style={portalFixedStyle}
+          >
+            {panelBody}
+          </span>,
+          portalHost,
+        )}
+      {isOpen && !portalHostOk && (
         <span
           ref={(el) => {
             floatingRef.current = el;
@@ -246,35 +357,7 @@ export function Popconfirm(props: PopconfirmProps): JSX.Element {
             overlayClass,
           )}
         >
-          <div class="flex gap-2">
-            {showIcon && (
-              <span class={twMerge("shrink-0 mt-0.5", iconToneCls)}>
-                <IconHelpCircle class="w-4 h-4" />
-              </span>
-            )}
-            <div class="flex-1">
-              <div class="text-sm mb-3">{title}</div>
-              <div class="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant={okVariant}
-                  size="sm"
-                  onClick={(_e: Event) => handleConfirm()}
-                >
-                  {okText}
-                </Button>
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  onClick={(_e: Event) => handleCancel()}
-                >
-                  {cancelText}
-                </Button>
-              </div>
-            </div>
-          </div>
-          {arrow && <span class={arrowCls} aria-hidden="true" />}
+          {panelBody}
         </span>
       )}
     </span>

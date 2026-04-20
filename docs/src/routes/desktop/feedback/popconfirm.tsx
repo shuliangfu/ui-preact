@@ -129,7 +129,7 @@ const exampleBasic = `<Popconfirm
     open.value = o;
   }}
   title="确定要执行该操作吗？"
-  placement="right"
+  placement="bottom"
   okText="确定"
   cancelText="取消"
   onConfirm={() => {
@@ -235,9 +235,8 @@ export default function FeedbackPopconfirm() {
           <Title level={3}>受控示例：普通 / 警告 / 危险</Title>
           <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
             「普通确认」使用{" "}
-            <code class="text-xs">placement=&quot;right&quot;</code>
-            ，气泡在按钮右侧，避免靠左贴边裁切；其余两个为默认{" "}
-            <code class="text-xs">top</code>
+            <code class="text-xs">placement=&quot;bottom&quot;</code>
+            ，气泡在按钮正下方；其余两个为默认 <code class="text-xs">top</code>
             。确定钮依次为
             primary、warning（琥珀色）、danger（红色）；问号图标颜色与语义略同向。
             默认带指向触发器的小箭头（<code class="text-xs">arrow</code>
@@ -256,7 +255,7 @@ export default function FeedbackPopconfirm() {
                 open.value = o;
               }}
               title="确定要执行该操作吗？"
-              placement="right"
+              placement="bottom"
               okText="确定"
               cancelText="取消"
               onConfirm={() => {
