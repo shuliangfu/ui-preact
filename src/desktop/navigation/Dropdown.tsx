@@ -21,6 +21,11 @@ import {
   resolvePlacement,
 } from "./dropdownPortalGeometry.ts";
 
+/**
+ * Portal 不自动置顶；须内联 z-index。数值取高以盖过常见 sticky 顶栏（见 ui-view 同源注释）。
+ */
+const DROPDOWN_OVERLAY_ROOT_Z_INDEX = "99999";
+
 export type DropdownPlacement =
   | "bottom"
   | "bottomLeft"
@@ -389,7 +394,9 @@ export function Dropdown(props: DropdownProps): JSX.Element {
             }
           }) as (e: Event) => void
           : undefined}
-        class={disabled ? "pointer-events-none opacity-50" : "cursor-pointer"}
+        class={disabled
+          ? "pointer-events-none opacity-50"
+          : "cursor-pointer inline-flex max-w-fit items-center"}
       >
         {children}
       </span>
@@ -403,8 +410,11 @@ export function Dropdown(props: DropdownProps): JSX.Element {
                 scheduleMeasure();
               }
             }}
-            class="fixed z-[100] overflow-visible"
-            style={portalStyle.value}
+            class="fixed overflow-visible"
+            style={{
+              ...portalStyle.value,
+              zIndex: DROPDOWN_OVERLAY_ROOT_Z_INDEX,
+            }}
             onClick={!isHover ? () => setOpen(false) : undefined}
             onMouseEnter={isHover
               ? (handleOverlayEnter as (e: Event) => void)
