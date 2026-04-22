@@ -482,6 +482,10 @@ export {
   uploadFileSimple,
   yearGridPageStart,
 } from "./desktop/mod.ts";
+/**
+ * 各国家/地区 1:1 国旗（`build-country-flags` 生成，`IconFlag`+两字母 ISO 大写，如 `IconFlagCN`）；与 ui-view 同源；根入口上列仅来自 desktop，故用 `export *` 再导出全部。
+ */
+export * from "./shared/basic/icons/flags/mod.ts";
 export type {
   AccordionItem,
   AccordionProps,

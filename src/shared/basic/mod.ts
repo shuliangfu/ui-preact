@@ -328,6 +328,8 @@ export {
   IconZoomIn,
   IconZoomOut,
 } from "./icons/mod.ts";
+/** 各国独立国旗下发（`icons/flags/mod`），与上面显式导出名合并 */
+export * from "./icons/flags/mod.ts";
 export { Paragraph, Text, Title } from "./Typography.tsx";
 export type { ParagraphProps, TextProps, TitleProps } from "./Typography.tsx";
 export { Badge } from "./Badge.tsx";
