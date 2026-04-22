@@ -325,7 +325,7 @@ export function Dropdown(props: DropdownProps): JSX.Element {
    */
   const buildPortalContent = () => {
     /**
-     * 与 ui-view {@link Dropdown} 一致：`arrow` 时勿画顶边全宽 border，避免与菱形箭头底边叠成双线。
+     * 与 ui-view {@link Dropdown} 一致：有箭头也保留整周 `border`，与 {@link Popover} 同策略，避免顶边缺失导致左右竖线悬空、箭头突兀。
      */
     const panel = (
       <div
@@ -333,9 +333,7 @@ export function Dropdown(props: DropdownProps): JSX.Element {
         id={overlayId}
         role="menu"
         class={twMerge(
-          arrow
-            ? "relative z-10 min-w-[120px] rounded-lg border-x border-b border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg p-1"
-            : "relative z-10 min-w-[120px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg p-1",
+          "relative z-10 min-w-[120px] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg p-1",
           overlayClass,
         )}
       >
