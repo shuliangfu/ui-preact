@@ -1,0 +1,18 @@
+/**
+ * **Timor-Leste** 国旗。ISO: `TL`；只含该国 SVG，**勿手改**（`build-country-flags.mts` 生成）。
+ * @see https://github.com/lipis/flag-icons
+ */
+import type { JSX } from "preact";
+
+import { FlagImg } from "../FlagImg.tsx";
+import type { CountryFlagComponentProps } from "../countryFlagTypes.ts";
+
+const FLAG_SVG: string =
+  '<svg xmlns="http://www.w3.org/2000/svg" id="flag-icons-tl" viewBox="0 0 512 512"><defs><clipPath id="tl-a"><path fill-opacity=".7" d="M0 0h496v496H0z"/></clipPath></defs><g fill-rule="evenodd" clip-path="url(#tl-a)" transform="scale(1.0321)"><path fill="#cb000f" d="M0 0h999v496H0z"/><path fill="#f8c00c" d="M0 0c3.1 0 496 248.7 496 248.7L0 496.1z"/><path fill="#000001" d="M0 0c2 0 330 248.7 330 248.7L0 496.1z"/><path fill="#fff" d="m181.9 288.9-59-13L93 327l-5-57.8-58.8-13 53.1-24-3.2-57.5 39 42 53.6-24.4-28 52.2 38 44.4z"/></g></svg>';
+
+/**
+ * Timor-Leste — 1:1 独立文件；只 import 本文件不会打入他国。
+ */
+export function IconFlagTL(props?: CountryFlagComponentProps): JSX.Element {
+  return <FlagImg svg={FLAG_SVG} {...props} />;
+}

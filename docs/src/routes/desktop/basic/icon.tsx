@@ -3,6 +3,7 @@
  * 路由: /basic/icon
  */
 
+import * as Uv from "@dreamer/ui-preact";
 import {
   CodeBlock,
   Icon,
@@ -324,6 +325,7 @@ import {
   IconZoomOut,
   Paragraph,
   Title,
+  toast,
 } from "@dreamer/ui-preact";
 import type { IconComponentProps } from "@dreamer/ui-preact";
 import type { JSX } from "preact";
@@ -331,17 +333,89 @@ import type { JSX } from "preact";
 /** 图标组件类型：与内置图标签名一致（Preact 下返回 JSX） */
 type IconComponentType = (props?: IconComponentProps) => JSX.Element;
 
-/** 单个图标展示：图标 + 名称（currentColor 继承自容器，dark 下提高对比度） */
+/**
+ * 解析可安全用于 TSX 的导出名（优先函数 `name`，与 `Icon…` 一致；压缩构建无 `name` 时退回拼接）。
+ *
+ * @param Component 内置图标或国旗组件
+ * @param displayName 格内展示文案
+ */
+function resolveIconExportName(
+  Component: IconComponentType,
+  displayName: string,
+): string {
+  const fn = Component as unknown as { name?: string };
+  if (
+    typeof fn.name === "string" &&
+    fn.name.length > 0 &&
+    fn.name.startsWith("Icon")
+  ) {
+    return fn.name;
+  }
+  if (displayName.startsWith("Icon")) {
+    return displayName;
+  }
+  const alnum = displayName.replace(/[^a-zA-Z0-9]+/g, "");
+  if (alnum.length > 0) {
+    return `Icon${
+      alnum.length === 1
+        ? alnum.toUpperCase()
+        : alnum[0]!.toUpperCase() + alnum.slice(1)
+    }`;
+  }
+  return displayName;
+}
+
+/**
+ * 将 `<IconX size="md" />` 写入剪贴板；成功/失败以 Toast 提示
+ *
+ * @param exportName 如 `IconInfo`
+ */
+function copyIconComponentSnippet(exportName: string): void {
+  const text = `<${exportName} size="md" />`;
+  const w = globalThis;
+  const clip = w.navigator?.clipboard;
+  if (clip == null || typeof clip.writeText !== "function") {
+    toast.error("复制失败", 3000, "top");
+    return;
+  }
+  void clip
+    .writeText(text)
+    .then(() => {
+      toast.success("复制成功", 2500, "top");
+    })
+    .catch(() => {
+      toast.error("复制失败", 3000, "top");
+    });
+}
+
+/** 单个图标展示：可点击复制 `<导出名 size="md" />`；下方为展示用短名/标签 */
 function IconItem(
   { Component, name }: { Component: IconComponentType; name: string },
 ) {
+  const exportName = resolveIconExportName(Component, name);
+  const copyLabel = `复制：<${exportName} size="md" />`;
   return (
-    <div class="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 min-w-[88px]">
-      <Component size="md" />
-      <span class="text-xs text-slate-500 dark:text-slate-300 truncate max-w-full">
+    <button
+      type="button"
+      class="flex w-full min-w-[88px] max-w-full flex-col items-center gap-1.5 p-3 rounded-lg border border-slate-200 dark:border-slate-500 bg-white dark:bg-slate-800 text-center text-slate-700 dark:text-slate-200 cursor-pointer transition-shadow hover:border-slate-300 hover:bg-slate-50 dark:hover:border-slate-400 dark:hover:bg-slate-700/80 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500"
+      aria-label={copyLabel}
+      onClick={() => {
+        copyIconComponentSnippet(exportName);
+      }}
+    >
+      <span
+        class="pointer-events-none flex w-full flex-col items-center"
+        aria-hidden
+      >
+        <Component size="md" />
+      </span>
+      <span
+        class="pointer-events-none block w-full text-center text-xs text-slate-500 dark:text-slate-300 truncate"
+        title={name}
+      >
         {name}
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -829,6 +903,26 @@ export default function BasicIcon() {
     { Component: IconTokenPepe, name: "PEPE" },
   ];
 
+  /**
+   * 自 `@dreamer/ui-preact` 命名空间收集全部 `IconFlag*`，排除通用手绘旗标 `IconFlag`。
+   * 短名与 ISO 两字母大写一致（如 `IconFlagCN`），由 `build-country-flags` 自 `flag-icons` 生成。
+   */
+  const 国家地区国旗: Array<
+    { Component: IconComponentType; name: string }
+  > = (() => {
+    const out: Array<{ Component: IconComponentType; name: string }> = [];
+    for (const key of Object.keys(Uv) as (keyof typeof Uv)[]) {
+      if (key === "IconFlag" || !String(key).startsWith("IconFlag")) {
+        continue;
+      }
+      const c = Uv[key];
+      if (typeof c !== "function") continue;
+      out.push({ Component: c as IconComponentType, name: String(key) });
+    }
+    out.sort((a, b) => a.name.localeCompare(b.name, "en"));
+    return out;
+  })();
+
   const importCode =
     `import { Icon, IconClose, IconCheck, IconSearch, IconPalette } from "@dreamer/ui-preact";
 
@@ -853,7 +947,8 @@ export default function BasicIcon() {
         <Paragraph class="mt-2">
           Icon 容器支持 size（xs/sm/md/lg）、class、children（自定义
           SVG）；内置图标组件（如 IconClose、IconSearch）按需引入，支持
-          size、class。Tailwind v4 + light/dark。
+          size、class。另含国家/地区国旗（IconFlag+两字母 ISO，如
+          IconFlagCN，每码一文件，见下文）。 Tailwind v4 + light/dark。
         </Paragraph>
       </section>
 
@@ -1065,6 +1160,14 @@ export default function BasicIcon() {
 
       <section class="space-y-10">
         <Title level={2}>图标一览</Title>
+        <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
+          点击任意格可复制用法代码（如{" "}
+          <code class="text-xs">{'<IconInfo size="md" />'}</code>
+          ）；以组件导名为准。剪贴板需由 <code class="text-xs">https</code> 或
+          {" "}
+          <code class="text-xs">localhost</code>{" "}
+          等安全环境提供；成功或失败时顶部 Toast 轻提示（复制成功 / 复制失败）。
+        </Paragraph>
 
         <div class="space-y-6">
           <Title level={3}>一、操作与导航</Title>
@@ -1114,6 +1217,26 @@ export default function BasicIcon() {
           <IconGroup title="办公 / 协作" items={办公协作} level={4} />
           <IconGroup title="状态 / 反馈" items={状态反馈其它} level={4} />
           <IconGroup title="其它" items={其它零散} level={4} />
+        </div>
+
+        <div class="space-y-6">
+          <Title level={3}>六、国家 / 地区国旗</Title>
+          <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
+            由 <code class="text-xs">scripts/build-country-flags.mts</code>{" "}
+            自 npm <code class="text-xs">flag-icons</code> 生成，组件名为
+            <code class="text-xs">IconFlag</code> 与两字母 ISO 大写拼接（如{" "}
+            <code class="text-xs">IconFlagCN</code>、
+            <code class="text-xs">IconFlagUS</code>），内联 1:1 SVG，仅 import
+            某一码时不会打入他码资源。下表为包内导出的全部此类组件（已排除通用手绘
+            <code class="text-xs">
+              IconFlag
+            </code>）；悬停名称区域可见完整导出名。
+          </Paragraph>
+          <IconGroup
+            title={`全部国家/地区（${国家地区国旗.length}）`}
+            items={国家地区国旗}
+            level={4}
+          />
         </div>
 
         <div class="space-y-6">
@@ -1271,7 +1394,7 @@ export default function BasicIcon() {
         </div>
 
         <div class="space-y-6">
-          <Title level={3}>七、常见代币 Logo</Title>
+          <Title level={3}>八、常见代币 Logo</Title>
           <IconGroup title="常见代币（品牌色）" items={代币Logo} level={4} />
         </div>
       </section>

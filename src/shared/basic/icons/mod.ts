@@ -321,3 +321,10 @@ export { IconBrandWeibo } from "./brands/Weibo.tsx";
 export { IconBrandWhatsapp } from "./brands/WhatsApp.tsx";
 export { IconBrandYoutube } from "./brands/YouTube.tsx";
 export { IconBrandZoom } from "./brands/Zoom.tsx";
+
+/* 国家/地区国旗：每码独立 `IconFlag`+两字母大写 .tsx，无全量 SVG 表；仅码表见 meta */
+export { COUNTRY_FLAG_CODES, isCountryFlagCode } from "./flags/meta.ts";
+export { FlagImg } from "./flags/FlagImg.tsx";
+export type { CountryFlagComponentProps } from "./flags/countryFlagTypes.ts";
+export type { FlagImgProps } from "./flags/FlagImg.tsx";
+export * from "./flags/mod.ts";

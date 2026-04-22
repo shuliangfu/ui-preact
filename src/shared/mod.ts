@@ -340,6 +340,7 @@ export {
   Text,
   Title,
 } from "./basic/mod.ts";
+export * from "./basic/icons/flags/mod.ts";
 export type {
   AvatarProps,
   AvatarSize,

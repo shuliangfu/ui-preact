@@ -332,6 +332,14 @@ export {
   IconZoomIn,
   IconZoomOut,
 } from "./icons/mod.ts";
+export {
+  COUNTRY_FLAG_CODES,
+  isCountryFlagCode,
+} from "../../shared/basic/icons/flags/meta.ts";
+export { FlagImg } from "../../shared/basic/icons/flags/FlagImg.tsx";
+export type { CountryFlagComponentProps } from "../../shared/basic/icons/flags/countryFlagTypes.ts";
+export type { FlagImgProps } from "../../shared/basic/icons/flags/FlagImg.tsx";
+export * from "../../shared/basic/icons/flags/mod.ts";
 export { Paragraph, Text, Title } from "./Typography.tsx";
 export type { ParagraphProps, TextProps, TitleProps } from "./Typography.tsx";
 export { Badge } from "./Badge.tsx";

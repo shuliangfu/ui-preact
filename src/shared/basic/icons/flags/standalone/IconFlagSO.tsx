@@ -1,0 +1,18 @@
+/**
+ * **Somalia** 国旗。ISO: `SO`；只含该国 SVG，**勿手改**（`build-country-flags.mts` 生成）。
+ * @see https://github.com/lipis/flag-icons
+ */
+import type { JSX } from "preact";
+
+import { FlagImg } from "../FlagImg.tsx";
+import type { CountryFlagComponentProps } from "../countryFlagTypes.ts";
+
+const FLAG_SVG: string =
+  '<svg xmlns="http://www.w3.org/2000/svg" id="flag-icons-so" viewBox="0 0 512 512"><defs><clipPath id="so-a"><path fill-opacity=".7" d="M177.2 0h708.6v708.7H177.2z"/></clipPath></defs><g fill-rule="evenodd" clip-path="url(#so-a)" transform="translate(-128)scale(.72249)"><path fill="#40a6ff" d="M0 0h1063v708.7H0z"/><path fill="#fff" d="m643 527.6-114.3-74-113.6 74.8 42.3-121.5-113.5-75 140.4-1 43.5-121.1 44.5 120.8 140.3.1-112.9 75.7z"/></g></svg>';
+
+/**
+ * Somalia — 1:1 独立文件；只 import 本文件不会打入他国。
+ */
+export function IconFlagSO(props?: CountryFlagComponentProps): JSX.Element {
+  return <FlagImg svg={FLAG_SVG} {...props} />;
+}
