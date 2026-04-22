@@ -182,10 +182,11 @@ Chart.js：ChartLine、ChartBar、ChartPie、ChartDoughnut、ChartRadar、ChartP
 
 ## 变更日志
 
-**最新：[1.0.1] — 2026-04-20**
+**最新：[1.1.0-beta.4] — 2026-04-22**
 
-- **变更：** `Popover` / `Popconfirm` 默认 body Portal + fixed 对齐；`Dropdown`
-  仅下方 placement 及 Portal 几何调整。
+- **变更：** `uiPreactTailwindPlugin` 生成 `@source` CSS 的步骤日志统一走
+  `@dreamer/logger`，为 **debug** 级别；注入官方 `Logger` 时 `onInit` 失败走
+  `error` 输出。
 
 完整记录见 [CHANGELOG-zh.md](./CHANGELOG-zh.md)。
 

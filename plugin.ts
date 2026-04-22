@@ -17,6 +17,7 @@
  * @see {@link uiPreactTailwindPlugin} 工厂函数与选项说明
  */
 
+import { createLogger, Logger } from "@dreamer/logger";
 import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
 import {
@@ -1249,37 +1250,55 @@ function formatPluginError(e: unknown): string {
   return String(e);
 }
 
-/** 宿主注入的 logger 形态（可能含 error，用于与 dweb 对齐） */
-type UiPreactTailwindLogger = {
-  info: (msg: string) => void;
-  debug: (msg: string) => void;
+/**
+ * 从容器取出 `@dreamer/logger` 的 `Logger`（仅 `instanceof Logger` 时视为官方实例）
+ *
+ * @param container - dweb 等服务容器
+ */
+function tryGetDreamerLoggerFromContainer(
+  container: ServiceContainer,
+): Logger | undefined {
+  try {
+    if (container.has("logger")) {
+      const raw = container.get("logger");
+      if (raw instanceof Logger) return raw;
+    }
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+}
+
+/**
+ * 非 `@dreamer/logger` 注入时，`onInit` 失败仍可通过宿主自定义 `error` 输出
+ */
+type TailwindPluginLegacyLogger = {
   error?: (msg: string, ...args: unknown[]) => void;
 };
 
 /**
- * 统一本插件在 onInit 中的日志出口：**info** 在宿主注入 logger 时只调用 `logger.info`（避免与 `console.info` 各打一行、内容重复）；
- * 无 logger 时再回退到 `console.info`（例如无容器的脚本场景）。
- * **debug** 已关闭（避免刷屏）；保留方法便于将来按需接回 `logger.debug`。
+ * Tailwind 步骤日志：**统一走 `@dreamer/logger`**——容器内有 `Logger` 时用 `child({ tags })` 打 debug；
+ * 否则独立 `createLogger`（level 为 `debug`）。
  *
- * @param logger - dweb 等服务容器中的 logger，可为 undefined
- * @returns 带 `info` / `debug` 的轻量对象
+ * @param container - 服务容器
+ * @returns 仅含 `debug` 的封装
  */
 function createUiPreactTailwindPluginLog(
-  logger: UiPreactTailwindLogger | undefined,
-): { info: (msg: string) => void; debug: (msg: string) => void } {
-  const tag = "[ui-preact-tailwind]";
+  container: ServiceContainer,
+): { debug: (msg: string) => void } {
+  const tag = "ui-preact-tailwind";
+  const base = tryGetDreamerLoggerFromContainer(container);
+  /** 子 Logger 带 tag；无应用级 Logger 时使用独立实例 */
+  const dl: Logger = base ? base.child({ tags: [tag] }) : createLogger({
+    level: "debug",
+    format: "text",
+    tags: [tag],
+    output: { console: true },
+  });
   return {
-    info(msg: string): void {
-      const line = `${tag} ${msg}`;
-      if (logger) {
-        logger.info(line);
-      } else {
-        console.info(line);
-      }
-    },
-    /** 调试日志已移除，刻意为空 */
-    debug(_msg: string): void {
-      void _msg;
+    /** Tailwind 扫描 / 写入 @source CSS 等步骤信息 */
+    debug(msg: string): void {
+      dl.debug(msg);
     },
   };
 }
@@ -1353,11 +1372,11 @@ export function uiPreactTailwindPlugin(
     version: "0.1.0",
 
     async onInit(container: ServiceContainer): Promise<void> {
-      const logger = container.tryGet<UiPreactTailwindLogger>("logger");
-      const log = createUiPreactTailwindPluginLog(logger);
+      const dreamer = tryGetDreamerLoggerFromContainer(container);
+      const log = createUiPreactTailwindPluginLog(container);
 
       /**
-       * 输出本插件内的失败详情：与 {@link createUiPreactTailwindPluginLog} 一致，有 logger 时只走 logger（避免与 stderr 重复一行）。
+       * 输出 onInit 失败：优先 `@dreamer/logger.error`；否则宿主注入的 `error`；再无则 `console.error`。
        *
        * @param phase - 阶段说明
        * @param e - 异常对象
@@ -1374,13 +1393,16 @@ export function uiPreactTailwindPlugin(
         const text = `[ui-preact-tailwind] ${phase}${
           ctxLines ? `\n上下文:\n${ctxLines}` : ""
         }\n${formatPluginError(e)}`;
-        if (logger?.error) {
-          logger.error(text);
-        } else if (logger) {
-          logger.info(text);
-        } else {
-          console.error(text);
+        if (dreamer) {
+          dreamer.error(text);
+          return;
         }
+        const legacy = container.tryGet<TailwindPluginLegacyLogger>("logger");
+        if (legacy?.error) {
+          legacy.error(text);
+          return;
+        }
+        console.error(text);
       };
 
       const root = cwd();
@@ -1393,7 +1415,7 @@ export function uiPreactTailwindPlugin(
           try {
             await collectTsTsx(scanDirAbs, scanDirAbs, files);
           } catch (e) {
-            log.info(
+            log.debug(
               `扫描目录失败，已跳过该目录（不会抛错）。scanDir=${scanDirAbs}\n${
                 formatPluginError(e)
               }`,
@@ -1401,7 +1423,7 @@ export function uiPreactTailwindPlugin(
           }
         }
         if (files.length === 0) {
-          log.info(
+          log.debug(
             `未发现可扫描的源码文件（目录为空或全部失败）。scanDirs=${
               scanDirs.join(",")
             }`,
@@ -1422,12 +1444,12 @@ export function uiPreactTailwindPlugin(
           }
         }
         if (readFailCount > 0) {
-          log.info(`解析导入时共有 ${readFailCount} 个文件读取失败（已忽略）`);
+          log.debug(`解析导入时共有 ${readFailCount} 个文件读取失败（已忽略）`);
         }
 
         const names = Array.from(usedNames).sort();
         if (names.length === 0) {
-          log.info(
+          log.debug(
             `未发现从 @dreamer/ui-preact 解析出的已映射组件名，跳过生成（请确认业务代码使用 import { X } from "@dreamer/ui-preact/..." 且 X 在插件映射表中）`,
           );
           return;
@@ -1450,7 +1472,7 @@ export function uiPreactTailwindPlugin(
           jsrVersion,
         });
         if (paths.length === 0) {
-          log.info(
+          log.debug(
             "未解析到任何可扫描的 ui-preact 源文件路径，跳过写入（请检查 deno.json、deno cache、outputPath 与组件映射）",
           );
           return;
@@ -1468,12 +1490,12 @@ export function uiPreactTailwindPlugin(
           .map((p) => `@source "${toAtSourceSpecifier(sourcesCssDir, p)}";`)
           .join("\n") + "\n";
 
-        /** 与历史版本一致：写入前后各一条 info（相对路径，避免绝对路径刷屏） */
+        /** 与历史版本一致：写入前后各一条 debug（相对路径，避免绝对路径刷屏） */
         const outRel = relative(root, outAbs);
-        log.info(`准备写入 ${outRel}（${cssContent.length} 字节）`);
+        log.debug(`准备写入 ${outRel}（${cssContent.length} 字节）`);
         await mkdir(sourcesCssDir, { recursive: true });
         await writeTextFile(outAbs, cssContent);
-        log.info(`已写入 ${outRel}`);
+        log.debug(`已写入 ${outRel}`);
       } catch (e) {
         logInitFailure("onInit 失败", e, {
           cwd: root,
