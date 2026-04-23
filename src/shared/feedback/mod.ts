@@ -65,6 +65,7 @@ export type { ResultProps, ResultStatus } from "./Result.tsx";
 export { Modal } from "./Modal.tsx";
 export type {
   ModalOpenInput,
+  ModalPlacement,
   ModalProps,
   ModalTitleAlign,
   ModalTitleInput,

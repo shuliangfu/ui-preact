@@ -107,6 +107,20 @@ const DIALOG_API: ApiRow[] = [
     default: "true",
     description: "是否显示底部",
   },
+  {
+    name: "variant",
+    type: '"default" | "alert" | "actionSheet"',
+    default: "alert",
+    description:
+      "类系统/底部 Sheet/旧版：`alert` 小屏边距+默认定/取横排；`actionSheet` 自底上滑；`default` 为固定 520+横排",
+  },
+  {
+    name: "mobileLayout",
+    type: '"row" | "auto" | "stack"',
+    default: "row",
+    description:
+      "仅库默认定/取：row 两钮横排（窄屏底栏内居中、sm+ 靠右）；需纵排用 auto/stack；自定义 footer 无效",
+  },
 ];
 
 const importCode = `import { signal } from "@preact/signals";
@@ -186,9 +200,14 @@ export default function FeedbackDialog() {
       <section>
         <Title level={1}>Dialog 确认对话框</Title>
         <Paragraph class="mt-2">
-          确认对话框，基于
-          Modal：标题、正文；支持警告确认（橙色确定）、危险操作（红色确定）、确定按钮
-          loading、自定义 footer。使用 Tailwind v4，支持 light/dark 主题。
+          确认对话框，基于 Modal：标题、正文；支持警告/危险/loading。默认
+          <code>variant=&#x22;alert&#x22;</code>
+          为小屏类系统边距，默认定/取两钮横排（窄屏在底栏内居中、
+          <code>sm+</code>
+          靠右）。另可选
+          <code>actionSheet</code>、
+          <code>default</code>。使用 Tailwind v4，支持 light/dark 主题。与
+          <code>@dreamer/ui-view</code> 的 Dialog 行为对齐。
         </Paragraph>
       </section>
 
@@ -361,8 +380,10 @@ export default function FeedbackDialog() {
         <Title level={2}>API</Title>
         <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
           Dialog 继承 Modal 大部分属性（如
-          closable、maskClosable、width、centered、destroyOnClose、keyboard
-          等），下表仅列 Dialog 特有或常用属性。
+          closable、maskClosable、width、centered、placement、destroyOnClose、keyboard
+          等；<code>variant=&#x22;actionSheet&#x22;</code> 时设
+          <code>placement=&#x22;bottom&#x22;</code>
+          ），下表仅列 Dialog 特有或常用属性。
         </Paragraph>
         <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-600">
           <table class="w-full min-w-lg text-sm">

@@ -61,6 +61,7 @@ export type { ResultProps, ResultStatus } from "./Result.tsx";
 export { Modal } from "./Modal.tsx";
 export type {
   ModalOpenInput,
+  ModalPlacement,
   ModalProps,
   ModalTitleAlign,
   ModalTitleInput,
@@ -68,7 +69,11 @@ export type {
   ModalWidthPrimitive,
 } from "./Modal.tsx";
 export { Dialog } from "./Dialog.tsx";
-export type { DialogProps } from "./Dialog.tsx";
+export type {
+  DialogMobileLayout,
+  DialogProps,
+  DialogVariant,
+} from "./Dialog.tsx";
 export { Tooltip } from "./Tooltip.tsx";
 export type { TooltipPlacement, TooltipProps } from "./Tooltip.tsx";
 export { Popover } from "./Popover.tsx";
