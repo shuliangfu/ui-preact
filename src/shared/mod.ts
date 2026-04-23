@@ -510,6 +510,7 @@ export type {
   MessagePlacement,
   MessageType,
   ModalOpenInput,
+  ModalPlacement,
   ModalProps,
   ModalTitleAlign,
   ModalTitleInput,

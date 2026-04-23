@@ -621,6 +621,7 @@ const COMPONENT_PATHS: Record<string, string[]> = {
   ],
   "Dialog": [
     "src/desktop/feedback/Dialog.tsx",
+    "src/mobile/feedback/Dialog.tsx",
     "src/shared/basic/Button.tsx",
     "src/shared/basic/button-variants.ts",
     "src/desktop/feedback/Modal.tsx",
@@ -630,6 +631,7 @@ const COMPONENT_PATHS: Record<string, string[]> = {
   ],
   "Modal": [
     "src/desktop/feedback/Modal.tsx",
+    "src/shared/feedback/Modal.tsx",
     "src/shared/basic/icons/Close.tsx",
     "src/shared/basic/icons/ExitFullscreen.tsx",
     "src/shared/basic/icons/Maximize2.tsx",

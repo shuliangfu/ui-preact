@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/ui-preact",
-  "version": "1.1.0-beta.6",
+  "version": "1.1.0-beta.7",
   "license": "Apache-2.0",
   "description": "Preact UI components for Dreamer. Migrated from ui-view (desktop + mobile path parity, shared implementations).",
   "repository": {

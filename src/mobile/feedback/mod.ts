@@ -4,6 +4,7 @@
  * **JSR**：`import … from "@dreamer/ui-preact/mobile/feedback"`。移动端**反馈**：Toast/Message/Notification 容器与命令式 API（薄 re-export）；**BottomSheet**、**ActionSheet**、**PullRefresh**、**SwipeCell** 等移动交互实现。
  *
  * @see {@link ./BottomSheet.tsx} 底部抽屉
+ * @see {@link ./Dialog.tsx} 确认对话框（与 desktop/feedback 同实现，re-export）
  */
 export { ToastContainer } from "./Toast.tsx";
 export { toast } from "./toast-store.ts";
@@ -67,3 +68,10 @@ export { PullRefresh } from "./PullRefresh.tsx";
 export type { PullRefreshProps, PullRefreshStatus } from "./PullRefresh.tsx";
 export { SwipeCell } from "./SwipeCell.tsx";
 export type { SwipeCellAction, SwipeCellProps } from "./SwipeCell.tsx";
+
+export { Dialog } from "./Dialog.tsx";
+export type {
+  DialogMobileLayout,
+  DialogProps,
+  DialogVariant,
+} from "./Dialog.tsx";
