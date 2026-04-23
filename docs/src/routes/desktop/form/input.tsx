@@ -141,6 +141,13 @@ const INPUT_API: ApiRow[] = [
   },
   { name: "name", type: "string", default: "-", description: "原生 name" },
   { name: "id", type: "string", default: "-", description: "原生 id" },
+  {
+    name: "autoComplete",
+    type: "string",
+    default: "-",
+    description:
+      "原生 autocomplete，如 `email`、`current-password`；登录/自动填充场景建议填写",
+  },
 ];
 
 const importCode = `import { Input, Form, FormItem } from "@dreamer/ui-preact";
@@ -168,6 +175,8 @@ export default function FormInput() {
   const valRight2 = signal("");
   const valRight3 = signal("");
   const valClear = signal("");
+  const valAutofillEmail = signal("");
+  const valAutofillPassword = signal("");
 
   return (
     <div class="space-y-10 w-full">
@@ -633,6 +642,88 @@ export default function FormInput() {
                 showLineNumbers
                 copyable
                 title="代码示例"
+                wrapLongLines
+              />
+            </div>
+          </section>
+
+          <section class="space-y-4">
+            <Title level={3}>自动填充与暗色主题</Title>
+            <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
+              Chrome / Edge 在识别为已保存账号并自动填入时，会用
+              <code class="text-xs">:-webkit-autofill</code> 强改浅底色。本库
+              <code class="text-xs">Input</code>
+              已用内嵌大阴影与字色与 light/dark 表面对齐。无需 Git
+              提交；需在本文档站点域名下让浏览器存过密码（成功登录并保存，或在「密码管理」里添加），再于下表从下拉选一条即可验证。与
+              <code class="text-xs">@dreamer/ui-view</code> 行为一致。
+            </Paragraph>
+            <div class="max-w-md space-y-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-600 dark:bg-slate-900/50">
+              <p class="text-sm font-medium text-slate-800 dark:text-slate-200">
+                试填（需本机已存密码）
+              </p>
+              <Form layout="vertical" class="w-full">
+                <FormItem
+                  label="邮箱"
+                  required
+                  id="doc-input-autofill-email-wrap"
+                >
+                  <Input
+                    id="doc-input-autofill-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    value={valAutofillEmail}
+                    placeholder="you@example.com"
+                    class="w-full"
+                  />
+                </FormItem>
+                <FormItem
+                  label="密码"
+                  required
+                  id="doc-input-autofill-password-wrap"
+                >
+                  <Input
+                    id="doc-input-autofill-password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={valAutofillPassword}
+                    placeholder="••••••••"
+                    class="w-full"
+                  />
+                </FormItem>
+              </Form>
+            </div>
+            <div class="w-full">
+              <CodeBlock
+                code={`import { signal } from "@preact/signals";
+import { Form, FormItem, Input } from "@dreamer/ui-preact";
+
+const email = signal("");
+const password = signal("");
+
+<Form layout="vertical" class="w-full max-w-md">
+  <FormItem label="邮箱" required>
+    <Input
+      name="email"
+      type="email"
+      autoComplete="email"
+      value={email}
+    />
+  </FormItem>
+  <FormItem label="密码" required>
+    <Input
+      name="password"
+      type="password"
+      autoComplete="current-password"
+      value={password}
+    />
+  </FormItem>
+</Form>`}
+                language="tsx"
+                showLineNumbers
+                copyable
+                title="代码示例（与自动填充/暗色底对齐的推荐写法）"
                 wrapLongLines
               />
             </div>
