@@ -14,6 +14,10 @@ import {
   controlErrorFocusRing,
 } from "./input-focus-ring.ts";
 import {
+  autofillVisualClass,
+  inputNativeAutoComplete,
+} from "./input-autofill-classes.ts";
+import {
   commitMaybeSignal,
   type MaybeSignal,
   readMaybeSignal,
@@ -67,9 +71,9 @@ export interface InputProps {
   /** 原生 id */
   id?: string;
   /**
-   * 原生 autocomplete（如 `email`、`current-password`），便于浏览器识别登录字段并触发自动填充。
+   * 自动完成与暗色 `:-webkit-autofill` 长 class：`true` 时合并并按 `type` 写原生 token；`string` 时原样；`false`/不传则都不加。
    */
-  autoComplete?: string;
+  autoComplete?: boolean | string;
 }
 
 const sizeClasses: Record<SizeVariant, string> = {
@@ -102,25 +106,9 @@ const sizeTextClasses: Record<SizeVariant, string> = {
   lg: "text-base",
 };
 
-/**
- * 自动填充时浏览器会强改浅底色（`:-webkit-autofill` 等），与暗色主题冲突；用 inset 大阴影 + 字色与输入框一致色压盖。
- */
-const inputAutofillOverride = [
-  "[&:-webkit-autofill]:[-webkit-text-fill-color:rgb(15_23_42)]",
-  "dark:[&:-webkit-autofill]:[-webkit-text-fill-color:rgb(241_245_249)]",
-  "[&:-webkit-autofill]:[box-shadow:0_0_0_1000px_rgb(255_255_255)_inset]",
-  "dark:[&:-webkit-autofill]:[box-shadow:0_0_0_1000px_rgb(30_41_59)_inset]",
-  "[&:autofill]:[-webkit-text-fill-color:rgb(15_23_42)]",
-  "dark:[&:autofill]:[-webkit-text-fill-color:rgb(241_245_249)]",
-  "[&:autofill]:[box-shadow:0_0_0_1000px_rgb(255_255_255)_inset]",
-  "dark:[&:autofill]:[box-shadow:0_0_0_1000px_rgb(30_41_59)_inset]",
-].join(" ");
-
-/** 基础样式：不含宽度与聚焦 ring（由 {@link controlBlueFocusRing}(`!hideFocusRing`) 拼接） */
-const inputSurface = twMerge(
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
-  inputAutofillOverride,
-);
+/** 底纹；autofill 长类见 {@link autofillVisualClass}（仅当设了 `autoComplete` 时） */
+const inputSurfaceBase =
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 const readOnlyCls = "bg-slate-50 dark:bg-slate-800/80 cursor-default";
 
 /** 左右缀：与中间输入区分隔线、略浅底，仍在同一外框内 */
@@ -167,7 +155,8 @@ function InputGroupShell(props: {
   required: boolean;
   error: boolean;
   value: MaybeSignal<string> | undefined;
-  autoComplete: string | undefined;
+  nativeAutoComplete: string | undefined;
+  autoCompleteHint: boolean | string | undefined;
   onInput: InputProps["onInput"];
   onChange: InputProps["onChange"];
   onBlur: InputProps["onBlur"];
@@ -193,7 +182,8 @@ function InputGroupShell(props: {
     required,
     error,
     value,
-    autoComplete,
+    nativeAutoComplete,
+    autoCompleteHint,
     onInput,
     onChange,
     onBlur,
@@ -209,7 +199,7 @@ function InputGroupShell(props: {
     "min-w-0 flex-1 border-0 bg-transparent shadow-none outline-none focus:ring-0",
     "text-inherit placeholder:text-slate-400 dark:placeholder:text-slate-500",
     "disabled:cursor-not-allowed",
-    inputAutofillOverride,
+    autofillVisualClass(autoCompleteHint),
     sizePadYClasses[size],
     "px-3",
   );
@@ -225,7 +215,7 @@ function InputGroupShell(props: {
         type={type}
         id={id}
         name={name}
-        autoComplete={autoComplete}
+        autoComplete={nativeAutoComplete}
         placeholder={placeholder}
         disabled={disabled}
         readOnly={readOnly}
@@ -305,6 +295,7 @@ export function Input(props: InputProps): JSX.Element {
   } = props;
 
   const sizeCls = sizeClasses[size];
+  const nativeAutoComplete = inputNativeAutoComplete(autoComplete, type);
 
   /**
    * 受控 `value` 为 Signal 时由组件写回，再调用外部 `onInput`。
@@ -339,14 +330,15 @@ export function Input(props: InputProps): JSX.Element {
     type,
     id,
     name,
-    autoComplete,
+    autoComplete: nativeAutoComplete,
     placeholder,
     disabled,
     readOnly,
     "aria-required": required,
     "aria-invalid": error,
     class: twMerge(
-      inputSurface,
+      inputSurfaceBase,
+      autofillVisualClass(autoComplete),
       controlBlueFocusRing(!hideFocusRing),
       sizeCls,
       !prefix && !suffix && !allowClear ? "w-full min-w-0" : undefined,
@@ -375,7 +367,7 @@ export function Input(props: InputProps): JSX.Element {
 
   const shellCls = twMerge(
     "relative flex w-full min-w-0 items-stretch overflow-hidden",
-    inputSurface,
+    inputSurfaceBase,
     sizeRoundedClasses[size],
     sizeTextClasses[size],
     !hideFocusRing &&
@@ -403,7 +395,8 @@ export function Input(props: InputProps): JSX.Element {
       type={type}
       id={id}
       name={name}
-      autoComplete={autoComplete}
+      nativeAutoComplete={nativeAutoComplete}
+      autoCompleteHint={autoComplete}
       placeholder={placeholder}
       disabled={disabled}
       readOnly={readOnly}

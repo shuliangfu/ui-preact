@@ -99,6 +99,11 @@ export interface TableColumn<T = unknown> {
   width?: number | string;
   /** 对齐 */
   align?: "left" | "center" | "right";
+  /**
+   * 表头 th 内标题对齐；**不传**时与 `align` 一致；`align` 也未设时与现网一致为**左**。
+   * 用于「表头居中、单元格仍左/右对齐」等布局。
+   */
+  headerAlign?: "left" | "center" | "right";
   /** 是否固定左侧 */
   fixed?: "left";
   /** 是否可排序 */
@@ -1518,63 +1523,78 @@ export function Table<
               {expandable?.expandedRowRender && (
                 <th class={twMerge("w-8", paddingCls)} />
               )}
-              {columns.map((col, colIndex) => (
-                <th
-                  key={col.key}
-                  class={twMerge(
-                    "text-left font-medium text-slate-700 dark:text-slate-300 select-none",
-                    col.fixed === "left" &&
-                      "bg-slate-50 dark:bg-slate-800 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.3)]",
-                    paddingCls,
-                    col.align === "center" && "text-center",
-                    col.align === "right" && "text-right",
-                    col.sorter &&
-                      "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700",
-                    headerClass,
-                  )}
-                  style={{
-                    ...(fixedLeftOffsets[colIndex] != null
-                      ? {
-                        position: "sticky" as const,
-                        left: `${fixedLeftOffsets[colIndex]}px`,
-                        zIndex: 2,
-                      }
-                      : {}),
-                    ...(col.width != null
-                      ? {
-                        width: typeof col.width === "number"
-                          ? `${col.width}px`
-                          : col.width,
-                      }
-                      : {}),
-                  }}
-                  onClick={() => col.sorter && handleSort(col.key, col.sorter)}
-                >
-                  <div class="flex items-center gap-1">
-                    {col.title}
-                    {col.sorter && (
-                      <div class="flex flex-col text-[10px] text-slate-400">
-                        <IconChevronUp
-                          class={twMerge(
-                            "w-3 h-3 -mb-1",
-                            sortKey === col.key &&
-                              sortOrder === "ascend" &&
-                              "text-blue-500",
-                          )}
-                        />
-                        <IconChevronDown
-                          class={twMerge(
-                            "w-3 h-3",
-                            sortKey === col.key &&
-                              sortOrder === "descend" &&
-                              "text-blue-500",
-                          )}
-                        />
-                      </div>
+              {columns.map((col, colIndex) => {
+                const headerTextAlign: "left" | "center" | "right" =
+                  col.headerAlign !== undefined
+                    ? col.headerAlign
+                    : (col.align !== undefined ? col.align : "left");
+                return (
+                  <th
+                    key={col.key}
+                    class={twMerge(
+                      "font-medium text-slate-700 dark:text-slate-300 select-none",
+                      col.fixed === "left" &&
+                        "bg-slate-50 dark:bg-slate-800 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.3)]",
+                      paddingCls,
+                      headerTextAlign === "left" && "text-left",
+                      headerTextAlign === "center" && "text-center",
+                      headerTextAlign === "right" && "text-right",
+                      col.sorter &&
+                        "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700",
+                      headerClass,
                     )}
-                  </div>
-                </th>
-              ))}
+                    style={{
+                      ...(fixedLeftOffsets[colIndex] != null
+                        ? {
+                          position: "sticky" as const,
+                          left: `${fixedLeftOffsets[colIndex]}px`,
+                          zIndex: 2,
+                        }
+                        : {}),
+                      ...(col.width != null
+                        ? {
+                          width: typeof col.width === "number"
+                            ? `${col.width}px`
+                            : col.width,
+                        }
+                        : {}),
+                    }}
+                    onClick={() =>
+                      col.sorter && handleSort(col.key, col.sorter)}
+                  >
+                    <div
+                      class={twMerge(
+                        "flex w-full min-w-0 items-center gap-1",
+                        headerTextAlign === "center" && "justify-center",
+                        headerTextAlign === "right" && "justify-end",
+                        headerTextAlign === "left" && "justify-start",
+                      )}
+                    >
+                      {col.title}
+                      {col.sorter && (
+                        <div class="flex flex-col text-[10px] text-slate-400">
+                          <IconChevronUp
+                            class={twMerge(
+                              "w-3 h-3 -mb-1",
+                              sortKey === col.key &&
+                                sortOrder === "ascend" &&
+                                "text-blue-500",
+                            )}
+                          />
+                          <IconChevronDown
+                            class={twMerge(
+                              "w-3 h-3",
+                              sortKey === col.key &&
+                                sortOrder === "descend" &&
+                                "text-blue-500",
+                            )}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>

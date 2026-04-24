@@ -979,6 +979,7 @@ const COMPONENT_PATHS: Record<string, string[]> = {
   ],
   "Input": [
     "src/shared/form/Input.tsx",
+    "src/shared/form/input-autofill-classes.ts",
     "src/shared/form/input-focus-ring.ts",
   ],
   "InputNumber": [
@@ -997,6 +998,7 @@ const COMPONENT_PATHS: Record<string, string[]> = {
   ],
   "Password": [
     "src/shared/form/Password.tsx",
+    "src/shared/form/input-autofill-classes.ts",
     "src/shared/form/input-focus-ring.ts",
   ],
   "Radio": [
@@ -1023,6 +1025,7 @@ const COMPONENT_PATHS: Record<string, string[]> = {
     "src/shared/basic/button-variants.ts",
     "src/shared/basic/icons/Type.tsx",
     "src/shared/form/Input.tsx",
+    "src/shared/form/input-autofill-classes.ts",
   ],
   "Search": [
     "src/shared/form/Search.tsx",
