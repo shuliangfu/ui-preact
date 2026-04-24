@@ -155,6 +155,52 @@ const TABLE_API: ApiRow[] = [
   },
 ];
 
+/** TableColumn 列级 API 文档行 */
+const TABLE_COLUMN_API: ApiRow[] = [
+  { name: "key", type: "string", default: "-", description: "列 key" },
+  { name: "title", type: "unknown", default: "-", description: "列标题" },
+  {
+    name: "dataIndex",
+    type: "keyof T | string",
+    default: "key",
+    description: "数据字段",
+  },
+  {
+    name: "render",
+    type: "function",
+    default: "-",
+    description: "单元格自定义渲染",
+  },
+  {
+    name: "align",
+    type: '"left" | "center" | "right"',
+    default: "left",
+    description: "单元格（td）水平对齐",
+  },
+  {
+    name: "headerAlign",
+    type: '"left" | "center" | "right"',
+    default: "同 align 或 left",
+    description:
+      '表头（th）标题对齐；可单独与 `align` 不同，例如表头居中而金额列 `align: "right"`',
+  },
+  { name: "width", type: "number | string", default: "-", description: "列宽" },
+  { name: "fixed", type: '"left"', default: "-", description: "左固定列" },
+  {
+    name: "sorter",
+    type: "boolean | 比较函数",
+    default: "-",
+    description: "可排序",
+  },
+  { name: "ellipsis", type: "boolean", default: "-", description: "过长收缩" },
+  {
+    name: "editable",
+    type: "TableColumnEditable",
+    default: "-",
+    description: "可编辑列配置，与 render 二选一",
+  },
+];
+
 /** API 表格列定义（属性、类型、默认值、说明） */
 const apiColumns = [
   {
@@ -583,9 +629,9 @@ export default function DataDisplayTable() {
       <section>
         <Title level={1}>Table 表格</Title>
         <Paragraph class="mt-2">
-          表格：columns、dataSource、rowKey、bordered、size、striped、loading、onRow、expandable、summary、locale、renderEmpty、title、extra、pagination、onSelectChange、rowClassName、headerClass、固定列
-          fixed、列级可编辑 editable 与 onCellChange。使用 Tailwind v4，支持
-          light/dark 主题。
+          表格：columns、dataSource、rowKey、bordered、size、striped、loading、onRow、expandable、summary、locale、renderEmpty、title、extra、pagination、onSelectChange、rowClassName、headerClass、固定列、列级
+          headerAlign fixed、列级可编辑 editable 与 onCellChange。使用 Tailwind
+          v4，支持 light/dark 主题。
         </Paragraph>
       </section>
 
@@ -830,7 +876,10 @@ export default function DataDisplayTable() {
       <section class="space-y-3">
         <Title level={2}>API</Title>
         <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
-          TableColumn：key、title、dataIndex、render、
+          列级类型 <code class="text-xs">TableColumn</code>{" "}
+          含：key、title、 dataIndex、render、<strong>align</strong>、
+          <strong>headerAlign</strong>
+          （表头 th 与单元格可不同对齐，不传则与 align 或左对齐）、
           <strong>editable</strong>
           （
           <code class="text-xs">
@@ -838,17 +887,36 @@ export default function DataDisplayTable() {
             select | checkbox | radio
           </code>
           ，可选 <code class="text-xs">disabled</code>{" "}
-          布尔或函数）、width、align、fixed、sorter、ellipsis。类型导出：
+          布尔或函数）、width、fixed、sorter、ellipsis。类型导出：
           <code class="text-xs">TableColumnEditable</code>、
           <code class="text-xs">TableCellChangePayload</code>、
           <code class="text-xs">
             TableEditableOption
-          </code>。可编辑列默认只读，双击进入编辑。Table 属性如下。
+          </code>。可编辑列默认只读，双击进入编辑。下表为
+          <strong>Table</strong> 根级属性，列属性见后表。
         </Paragraph>
         <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-600">
           <Table<ApiRow>
             columns={apiColumns}
             dataSource={TABLE_API}
+            rowKey="name"
+            bordered
+            striped
+            hoverable
+            size="md"
+            class="min-w-lg text-sm"
+            headerClass="border-b border-slate-200 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/80"
+            rowClassName={() =>
+              "border-b border-slate-100 dark:border-slate-700 last:border-b-0"}
+          />
+        </div>
+        <Title class="!mt-8" level={3}>
+          TableColumn
+        </Title>
+        <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-600">
+          <Table<ApiRow>
+            columns={apiColumns}
+            dataSource={TABLE_COLUMN_API}
             rowKey="name"
             bordered
             striped

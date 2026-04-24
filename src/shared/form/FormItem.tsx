@@ -3,7 +3,15 @@
  * 提供标签、必填星号、错误提示；支持标签在上方或左侧，左侧时可左对齐/右对齐。
  */
 
-import type { ComponentChildren, JSX } from "preact";
+import {
+  cloneElement,
+  type ComponentChildren,
+  isValidElement,
+  type JSX,
+  toChildArray,
+  type VNode,
+} from "preact";
+import { useId } from "preact/hooks";
 import { twMerge } from "tailwind-merge";
 
 /** 标签位置：上方（默认）或左侧 */
@@ -53,6 +61,48 @@ const requiredMarkCls = "relative top-[0.1em] text-sm font-medium leading-none";
 const errorCls = "mt-1 text-sm text-red-600 dark:text-red-400";
 
 /**
+ * 在未传 `FormItem` 的 `id` 时，为 `label[for]` 与子控件 `id` 取同一 `controlId`；单孩儿时尽量 `cloneElement` 补 `id`（已有 `id` 不覆盖）。
+ * 多子/片段时只保证 `for` 与自生成 `id` 对屏幕阅读器/校验提示可用，建议仍显式设 `id` 或只放一个主控件。
+ */
+function useFormItemField(
+  id: string | undefined,
+  children: ComponentChildren,
+): { controlId: string; fieldChildren: ComponentChildren } {
+  const uid = useId();
+  const autoId = `form-item-${uid.replace(/:/g, "-")}`;
+  const childArr = toChildArray(children);
+  let fromChild: string | undefined;
+  if (childArr.length === 1 && isValidElement(childArr[0])) {
+    const p = (childArr[0] as VNode).props as
+      | { id?: string }
+      | null
+      | undefined;
+    if (p && typeof p.id === "string" && p.id !== "") {
+      fromChild = p.id;
+    }
+  }
+  const controlId = id != null && id !== ""
+    ? id
+    : (fromChild != null && fromChild !== "" ? fromChild : autoId);
+
+  if (childArr.length === 1 && isValidElement(childArr[0])) {
+    const n = childArr[0] as VNode;
+    const p = n.props as { id?: string } | null | undefined;
+    const childHasId = p && typeof p.id === "string" && p.id !== "";
+    if (!childHasId) {
+      return {
+        controlId,
+        fieldChildren: cloneElement(
+          n,
+          { id: controlId } as never,
+        ),
+      };
+    }
+  }
+  return { controlId, fieldChildren: children };
+}
+
+/**
  * 单字段布局：标签 + 控件 + 可选 trailing + 错误文案。
  */
 export function FormItem(props: FormItemProps): JSX.Element {
@@ -69,6 +119,8 @@ export function FormItem(props: FormItemProps): JSX.Element {
     children,
   } = props;
 
+  const { controlId, fieldChildren } = useFormItemField(id, children);
+
   const hasError = Boolean(error);
   const isLeft = labelPosition === "left";
   const hasTrailing = trailing != null && trailing !== false;
@@ -77,7 +129,7 @@ export function FormItem(props: FormItemProps): JSX.Element {
   const labelEl = label != null
     ? (
       <label
-        for={id}
+        for={controlId}
         class={twMerge(
           labelBaseCls,
           isLeft
@@ -118,7 +170,7 @@ export function FormItem(props: FormItemProps): JSX.Element {
                 hasTrailing ? "max-w-md flex-1" : "flex-1",
               )}
             >
-              <div class="form-item-input min-w-0 flex-1">{children}</div>
+              <div class="form-item-input min-w-0 flex-1">{fieldChildren}</div>
               {hasTrailing && (
                 <div class="form-item-trailing shrink-0">{trailing}</div>
               )}
@@ -134,7 +186,7 @@ export function FormItem(props: FormItemProps): JSX.Element {
                 hasTrailing && "w-full max-w-md",
               )}
             >
-              <div class="form-item-input min-w-0 flex-1">{children}</div>
+              <div class="form-item-input min-w-0 flex-1">{fieldChildren}</div>
               {hasTrailing && (
                 <div class="form-item-trailing shrink-0">{trailing}</div>
               )}
@@ -142,7 +194,7 @@ export function FormItem(props: FormItemProps): JSX.Element {
           </>
         )}
       {error != null && error !== "" && (
-        <div class={errorCls} id={id ? `${id}-error` : undefined}>
+        <div class={errorCls} id={`${controlId}-error`}>
           {error}
         </div>
       )}

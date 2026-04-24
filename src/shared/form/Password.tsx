@@ -6,6 +6,10 @@
 import type { JSX } from "preact";
 import { twMerge } from "tailwind-merge";
 import type { SizeVariant } from "../types.ts";
+import {
+  autofillVisualClass,
+  passwordNativeAutoComplete,
+} from "./input-autofill-classes.ts";
 import { controlBlueFocusRing } from "./input-focus-ring.ts";
 import {
   commitMaybeSignal,
@@ -50,6 +54,12 @@ export interface PasswordProps {
   name?: string;
   /** 原生 id */
   id?: string;
+  /**
+   * 自动完成与暗色 autofill 长 class：`true` 时合并并写原生 token；`string` 时原样。见 ui-view `PasswordProps`。
+   */
+  autoComplete?: boolean | string;
+  /** 与 `autoComplete={true}` 联用：新密码字段用 `new-password` */
+  newPassword?: boolean;
   /** 是否显示强度提示（弱/中/强） */
   showStrength?: boolean;
 }
@@ -61,8 +71,8 @@ const sizeClasses: Record<SizeVariant, string> = {
   lg: "px-4 py-2.5 pr-11 text-base rounded-lg",
 };
 
-/** 输入区底纹（不含 ring） */
-const inputSurface =
+/** 与 `Input` 的 `inputSurfaceBase` 一致（autofill 长类由 `autofillVisualClass(autoComplete)` 按需合并） */
+const inputSurfaceBase =
   "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
 /**
@@ -127,9 +137,15 @@ export function Password(props: PasswordProps): JSX.Element {
     onPaste,
     name,
     id,
+    autoComplete,
+    newPassword = false,
   } = props;
 
   const sizeCls = sizeClasses[size];
+  const nativeAutoComplete = passwordNativeAutoComplete(
+    autoComplete,
+    newPassword,
+  );
 
   /**
    * 受控 `value` 为 Signal 时由组件写回，再调用外部 `onInput`。
@@ -152,7 +168,8 @@ export function Password(props: PasswordProps): JSX.Element {
   };
 
   const inputClass = twMerge(
-    inputSurface,
+    inputSurfaceBase,
+    autofillVisualClass(autoComplete),
     controlBlueFocusRing(!hideFocusRing),
     sizeCls,
     onToggleShow || showStrength ? "pr-10" : undefined,
@@ -163,6 +180,7 @@ export function Password(props: PasswordProps): JSX.Element {
     type: showPassword ? "text" : "password",
     id,
     name,
+    autoComplete: nativeAutoComplete,
     placeholder,
     disabled,
     class: inputClass,
