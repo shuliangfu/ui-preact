@@ -4,32 +4,18 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/basic/link";
 
 describe("文档页 E2E：/desktop/basic/link（Link 链接）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("main 内存在可点的 a[href] 且可点击", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(450);
-    const text = await env.getMainText(t);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(450);
+    const text = await sharedEnv.getMainText(t);
     expect(text.length).toBeGreaterThanOrEqual(36);
     expect(text).toMatch(/Link|链接/i);
     const ok = (await t.browser!.evaluate(() => {
@@ -48,8 +34,8 @@ describe("文档页 E2E：/desktop/basic/link（Link 链接）", () => {
    */
   it("严格·默认", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "默认";
       const main = document.querySelector("main");
@@ -156,8 +142,8 @@ describe("文档页 E2E：/desktop/basic/link（Link 链接）", () => {
    */
   it("严格·新窗口 target / rel", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "新窗口 target / rel";
       const main = document.querySelector("main");
@@ -264,8 +250,8 @@ describe("文档页 E2E：/desktop/basic/link（Link 链接）", () => {
    */
   it("严格·自定义 class", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "自定义 class";
       const main = document.querySelector("main");
@@ -372,8 +358,8 @@ describe("文档页 E2E：/desktop/basic/link（Link 链接）", () => {
    */
   it("严格·underline（下划线）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "underline（下划线）";
       const main = document.querySelector("main");
@@ -480,8 +466,8 @@ describe("文档页 E2E：/desktop/basic/link（Link 链接）", () => {
    */
   it("严格·链接按钮 button + variant + size", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "链接按钮 button + variant + size";
       const main = document.querySelector("main");

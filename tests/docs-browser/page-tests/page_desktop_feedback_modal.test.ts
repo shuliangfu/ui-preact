@@ -4,30 +4,16 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/feedback/modal";
 
 describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("本页关键词命中且 main 内完成浅层交互探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await runKeywordAndShallowHere(t, env, DOC_PATH, [
+    await runKeywordAndShallowHere(t, DOC_PATH, [
       /Modal|模态/i,
     ]);
   }, DOCS_BROWSER_CONFIG);
@@ -37,8 +23,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("可打开 Modal 并点确定关闭", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(500);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(500);
     const openOk = await t.browser.evaluate(() => {
       const main = document.querySelector("main");
       if (!main) return false;
@@ -54,7 +40,7 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
       return false;
     }) as boolean;
     expect(openOk).toBe(true);
-    await env.delay(200);
+    await sharedEnv.delay(200);
     const confirmOk = await t.browser.evaluate(() => {
       const btns = document.querySelectorAll('button[type="button"]');
       for (let i = 0; i < btns.length; i++) {
@@ -75,8 +61,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·基础用法", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "基础用法";
       const main = document.querySelector("main");
@@ -183,8 +169,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·无 Footer", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "无 Footer";
       const main = document.querySelector("main");
@@ -291,8 +277,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·无标题", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "无标题";
       const main = document.querySelector("main");
@@ -399,8 +385,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·点击遮罩不关闭", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "点击遮罩不关闭";
       const main = document.querySelector("main");
@@ -507,8 +493,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·无遮罩", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "无遮罩";
       const main = document.querySelector("main");
@@ -615,8 +601,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·自定义宽度", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "自定义宽度";
       const main = document.querySelector("main");
@@ -723,8 +709,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·不垂直居中", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "不垂直居中";
       const main = document.querySelector("main");
@@ -831,8 +817,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·可移动", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "可移动";
       const main = document.querySelector("main");
@@ -939,8 +925,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·支持 ESC", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "支持 ESC";
       const main = document.querySelector("main");
@@ -1047,8 +1033,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·全屏", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "全屏";
       const main = document.querySelector("main");
@@ -1155,8 +1141,8 @@ describe("文档页 E2E：/desktop/feedback/modal（Modal 模态框）", () => {
    */
   it("严格·自定义样式", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "自定义样式";
       const main = document.querySelector("main");
@@ -1347,8 +1333,6 @@ async function shallowInteractMainHere(
   }
 }
 
-type DocsEnvLike = ReturnType<typeof createDocsBrowserTestEnv>;
-
 /**
  * 本文件内：打开文档、断言关键词、再执行 {@link shallowInteractMainHere}。
  */
@@ -1359,18 +1343,17 @@ async function runKeywordAndShallowHere(
       evaluate: (fn: () => unknown) => Promise<unknown>;
     };
   },
-  env: DocsEnvLike,
   path: string,
   patterns: RegExp[],
   minLen = 32,
 ): Promise<void> {
   if (!t?.browser?.goto) return;
-  await env.goto(t, path);
-  await env.delay(450);
-  let text = await env.getMainText(t);
+  await sharedEnv.goto(t, path);
+  await sharedEnv.delay(450);
+  let text = await sharedEnv.getMainText(t);
   if (text.length < minLen) {
-    await env.delay(550);
-    text = await env.getMainText(t);
+    await sharedEnv.delay(550);
+    text = await sharedEnv.getMainText(t);
   }
   if (text.length === 0) {
     text = (await t.browser!.evaluate(() =>

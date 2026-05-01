@@ -4,30 +4,16 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/form/cascader";
 
 describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("本页关键词命中且 main 内完成浅层交互探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await runKeywordAndShallowHere(t, env, DOC_PATH, [
+    await runKeywordAndShallowHere(t, DOC_PATH, [
       /Cascader|级联/i,
     ]);
   }, DOCS_BROWSER_CONFIG);
@@ -37,8 +23,8 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
    */
   it("级联选择器可展开并完成三级点选", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(500);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(500);
     const openOk = await t.browser.evaluate(() => {
       const root = document.querySelector("main [data-ui-cascader-root]");
       const btn = root?.querySelector(
@@ -49,7 +35,7 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
       return true;
     }) as boolean;
     expect(openOk).toBe(true);
-    await env.delay(250);
+    await sharedEnv.delay(250);
     /** 依次点选三级，每步单独 evaluate（与浏览器桥接序列化方式无关）。 */
     const step1 = await t.browser.evaluate(() => {
       const panel = document.querySelector("main [data-ui-cascader-root]");
@@ -66,7 +52,7 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
       return false;
     }) as boolean;
     expect(step1).toBe(true);
-    await env.delay(180);
+    await sharedEnv.delay(180);
     const step2 = await t.browser.evaluate(() => {
       const panel = document.querySelector("main [data-ui-cascader-root]");
       if (!panel) return false;
@@ -82,7 +68,7 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
       return false;
     }) as boolean;
     expect(step2).toBe(true);
-    await env.delay(180);
+    await sharedEnv.delay(180);
     const step3 = await t.browser.evaluate(() => {
       const panel = document.querySelector("main [data-ui-cascader-root]");
       if (!panel) return false;
@@ -105,8 +91,8 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
    */
   it("严格·静态数据（多级嵌套）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "静态数据（多级嵌套）";
       const main = document.querySelector("main");
@@ -213,8 +199,8 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
    */
   it("严格·静态数据（二级：市 / 区）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "静态数据（二级：市 / 区）";
       const main = document.querySelector("main");
@@ -321,8 +307,8 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
    */
   it("严格·表单 name（多段隐藏域）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "表单 name（多段隐藏域）";
       const main = document.querySelector("main");
@@ -429,8 +415,8 @@ describe("文档页 E2E：/desktop/form/cascader（Cascader 级联）", () => {
    */
   it("严格·动态加载（loadChildren）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "动态加载（loadChildren）";
       const main = document.querySelector("main");
@@ -621,8 +607,6 @@ async function shallowInteractMainHere(
   }
 }
 
-type DocsEnvLike = ReturnType<typeof createDocsBrowserTestEnv>;
-
 /**
  * 本文件内：打开文档、断言关键词、再执行 {@link shallowInteractMainHere}。
  */
@@ -633,18 +617,17 @@ async function runKeywordAndShallowHere(
       evaluate: (fn: () => unknown) => Promise<unknown>;
     };
   },
-  env: DocsEnvLike,
   path: string,
   patterns: RegExp[],
   minLen = 32,
 ): Promise<void> {
   if (!t?.browser?.goto) return;
-  await env.goto(t, path);
-  await env.delay(450);
-  let text = await env.getMainText(t);
+  await sharedEnv.goto(t, path);
+  await sharedEnv.delay(450);
+  let text = await sharedEnv.getMainText(t);
   if (text.length < minLen) {
-    await env.delay(550);
-    text = await env.getMainText(t);
+    await sharedEnv.delay(550);
+    text = await sharedEnv.getMainText(t);
   }
   if (text.length === 0) {
     text = (await t.browser!.evaluate(() =>

@@ -4,30 +4,16 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/form/time-picker";
 
 describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("本页关键词命中且 main 内完成浅层交互探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await runKeywordAndShallowHere(t, env, DOC_PATH, [
+    await runKeywordAndShallowHere(t, DOC_PATH, [
       /TimePicker|时间/i,
     ]);
   }, DOCS_BROWSER_CONFIG);
@@ -37,8 +23,8 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
    */
   it("时间选择器可打开选择面板", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(500);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(500);
     const openOk = await t.browser.evaluate(() => {
       const root = document.querySelector("main [data-ui-timepicker-root]");
       const btn = root?.querySelector(
@@ -49,7 +35,7 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
       return true;
     }) as boolean;
     expect(openOk).toBe(true);
-    await env.delay(500);
+    await sharedEnv.delay(500);
     const dlgVisible = await t.browser.evaluate(() => {
       return !!document.querySelector(
         '[role="dialog"][aria-label="选择时间"]',
@@ -63,8 +49,8 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
    */
   it("严格·基础", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "基础";
       const main = document.querySelector("main");
@@ -171,8 +157,8 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
    */
   it("严格·有默认值", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "有默认值";
       const main = document.querySelector("main");
@@ -279,8 +265,8 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
    */
   it("严格·format：秒 / 单列时、分、秒", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "format：秒 / 单列时、分、秒";
       const main = document.querySelector("main");
@@ -387,8 +373,8 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
    */
   it("严格·size（xs / sm / md / lg）与 disabled", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "size（xs / sm / md / lg）与 disabled";
       const main = document.querySelector("main");
@@ -495,8 +481,8 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
    */
   it("严格·mode='range' 时间区间", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = 'mode="range" 时间区间';
       const main = document.querySelector("main");
@@ -603,8 +589,8 @@ describe("文档页 E2E：/desktop/form/time-picker（TimePicker 时间）", () 
    */
   it("严格·mode='multiple' 多个时刻", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = 'mode="multiple" 多个时刻';
       const main = document.querySelector("main");
@@ -795,8 +781,6 @@ async function shallowInteractMainHere(
   }
 }
 
-type DocsEnvLike = ReturnType<typeof createDocsBrowserTestEnv>;
-
 /**
  * 本文件内：打开文档、断言关键词、再执行 {@link shallowInteractMainHere}。
  */
@@ -807,18 +791,17 @@ async function runKeywordAndShallowHere(
       evaluate: (fn: () => unknown) => Promise<unknown>;
     };
   },
-  env: DocsEnvLike,
   path: string,
   patterns: RegExp[],
   minLen = 32,
 ): Promise<void> {
   if (!t?.browser?.goto) return;
-  await env.goto(t, path);
-  await env.delay(450);
-  let text = await env.getMainText(t);
+  await sharedEnv.goto(t, path);
+  await sharedEnv.delay(450);
+  let text = await sharedEnv.getMainText(t);
   if (text.length < minLen) {
-    await env.delay(550);
-    text = await env.getMainText(t);
+    await sharedEnv.delay(550);
+    text = await sharedEnv.getMainText(t);
   }
   if (text.length === 0) {
     text = (await t.browser!.evaluate(() =>

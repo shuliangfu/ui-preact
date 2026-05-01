@@ -4,32 +4,18 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/layout/tabs";
 
 describe("文档页 E2E：/desktop/layout/tabs（Tabs 标签页）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("可切换到第二项 Tab 并完成浅层控件探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(450);
-    const text = await env.getMainText(t);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.waitDocMainReady(t, { minChars: 36 });
+    const text = await sharedEnv.getMainText(t);
     expect(text.length).toBeGreaterThanOrEqual(36);
     expect(text).toMatch(/Tabs|标签页|Tab/i);
     expect(await clickSecondTabHere(t)).toBe(true);
@@ -41,8 +27,8 @@ describe("文档页 E2E：/desktop/layout/tabs（Tabs 标签页）", () => {
    */
   it("严格·type=line", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "type=line";
       const main = document.querySelector("main");
@@ -149,8 +135,8 @@ describe("文档页 E2E：/desktop/layout/tabs（Tabs 标签页）", () => {
    */
   it("严格·type=card", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "type=card";
       const main = document.querySelector("main");
@@ -257,8 +243,8 @@ describe("文档页 E2E：/desktop/layout/tabs（Tabs 标签页）", () => {
    */
   it("严格·fullWidth", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "fullWidth";
       const main = document.querySelector("main");
@@ -365,8 +351,8 @@ describe("文档页 E2E：/desktop/layout/tabs（Tabs 标签页）", () => {
    */
   it("严格·items 含 disabled", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "items 含 disabled";
       const main = document.querySelector("main");
@@ -469,33 +455,32 @@ describe("文档页 E2E：/desktop/layout/tabs（Tabs 标签页）", () => {
   }, DOCS_BROWSER_CONFIG);
 });
 
-/** 本文件内：点击第二个 tab */
+/**
+ * 本文件内：在**首个** `role="tablist"` 内点击第二项。
+ * Tabs 示例晚于 CodeBlock 挂载，`waitDocMainReady` 通过后可能仍无 tab，需轮询。
+ */
 async function clickSecondTabHere(
   t: { browser?: { evaluate: (fn: () => boolean) => Promise<unknown> } },
 ): Promise<boolean> {
   if (!t?.browser) return false;
-  const ok = await t.browser.evaluate(() => {
-    const main = document.querySelector("main");
-    if (!main) return false;
-    const tabs = main.querySelectorAll(
-      '[role="tab"], [data-state], .cursor-pointer',
-    );
-    for (let i = 0; i < tabs.length; i++) {
-      const el = tabs[i] as HTMLElement;
-      if (
-        el.getAttribute?.("role") === "tab" ||
-        el.classList?.contains("cursor-pointer")
-      ) {
-        if (i >= 1) {
-          el.click();
-          return true;
-        }
-      }
+  const deadline = Date.now() + 12_000;
+  while (Date.now() < deadline) {
+    const ok = await t.browser.evaluate(() => {
+      const main = document.querySelector("main");
+      if (!main) return false;
+      const list = main.querySelector('[role="tablist"]');
+      const tabs = list?.querySelectorAll('[role="tab"]');
+      if (!tabs || tabs.length < 2) return false;
+      (tabs[1] as HTMLElement).click();
+      return true;
+    });
+    if (ok) {
+      await new Promise((r) => setTimeout(r, 150));
+      return true;
     }
-    return false;
-  });
-  await new Promise((r) => setTimeout(r, 150));
-  return ok as boolean;
+    await sharedEnv.delay(100);
+  }
+  return false;
 }
 
 /**

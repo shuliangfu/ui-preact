@@ -4,30 +4,16 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/navigation/menu";
 
 describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("本页关键词命中且 main 内完成浅层交互探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await runKeywordAndShallowHere(t, env, DOC_PATH, [
+    await runKeywordAndShallowHere(t, DOC_PATH, [
       /Menu|菜单/i,
     ]);
   }, DOCS_BROWSER_CONFIG);
@@ -37,8 +23,8 @@ describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
    */
   it("严格·mode=vertical（垂直）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "mode=vertical（垂直）";
       const main = document.querySelector("main");
@@ -148,8 +134,8 @@ describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
    */
   it("垂直示例：点击子菜单标题应收起（aria-expanded=false）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     await t.browser.evaluate(() => {
       const needle = "mode=vertical（垂直）";
       const main = document.querySelector("main");
@@ -175,7 +161,7 @@ describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
         return;
       }
     });
-    await env.delay(200);
+    await sharedEnv.delay(200);
     const collapsed = await t.browser.evaluate(() => {
       const needle = "mode=vertical（垂直）";
       const main = document.querySelector("main");
@@ -210,8 +196,8 @@ describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
    */
   it("水平 popover 示例：点击子菜单后须出现子项文案", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     await t.browser.evaluate(() => {
       const needle = "mode=horizontal + usePopoverSubmenu";
       const main = document.querySelector("main");
@@ -236,7 +222,7 @@ describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
         return;
       }
     });
-    await env.delay(250);
+    await sharedEnv.delay(250);
     const hasSubItem = await t.browser.evaluate(() => {
       const needle = "mode=horizontal + usePopoverSubmenu";
       const main = document.querySelector("main");
@@ -253,7 +239,7 @@ describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
     });
     expect(hasSubItem).toBe(true);
     /** 回归：误关外部 click 曾导致子菜单一闪即没，延迟后仍须可见 */
-    await env.delay(450);
+    await sharedEnv.delay(450);
     const stillOpen = await t.browser.evaluate(() => {
       const needle = "mode=horizontal + usePopoverSubmenu";
       const main = document.querySelector("main");
@@ -273,8 +259,8 @@ describe("文档页 E2E：/desktop/navigation/menu（Menu 菜单）", () => {
 
   it("严格·mode=horizontal + usePopoverSubmenu", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "mode=horizontal + usePopoverSubmenu";
       const main = document.querySelector("main");
@@ -465,8 +451,6 @@ async function shallowInteractMainHere(
   }
 }
 
-type DocsEnvLike = ReturnType<typeof createDocsBrowserTestEnv>;
-
 /**
  * 本文件内：打开文档、断言关键词、再执行 {@link shallowInteractMainHere}。
  */
@@ -477,18 +461,17 @@ async function runKeywordAndShallowHere(
       evaluate: (fn: () => unknown) => Promise<unknown>;
     };
   },
-  env: DocsEnvLike,
   path: string,
   patterns: RegExp[],
   minLen = 32,
 ): Promise<void> {
   if (!t?.browser?.goto) return;
-  await env.goto(t, path);
-  await env.delay(450);
-  let text = await env.getMainText(t);
+  await sharedEnv.goto(t, path);
+  await sharedEnv.delay(450);
+  let text = await sharedEnv.getMainText(t);
   if (text.length < minLen) {
-    await env.delay(550);
-    text = await env.getMainText(t);
+    await sharedEnv.delay(550);
+    text = await sharedEnv.getMainText(t);
   }
   if (text.length === 0) {
     text = (await t.browser!.evaluate(() =>

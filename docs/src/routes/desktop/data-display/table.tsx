@@ -910,7 +910,7 @@ export default function DataDisplayTable() {
               "border-b border-slate-100 dark:border-slate-700 last:border-b-0"}
           />
         </div>
-        <Title class="!mt-8" level={3}>
+        <Title class="mt-8" level={3}>
           TableColumn
         </Title>
         <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-600">
