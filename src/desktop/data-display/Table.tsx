@@ -19,8 +19,17 @@ import { InputNumber } from "../form/InputNumber.tsx";
 import { TimePicker } from "../form/TimePicker.tsx";
 /** 按需：单文件图标，避免经 icons/mod 拉入全表 */
 import { IconChevronDown } from "../../shared/basic/icons/ChevronDown.tsx";
+import { IconChevronLeft } from "../../shared/basic/icons/ChevronLeft.tsx";
+import { IconChevronRight } from "../../shared/basic/icons/ChevronRight.tsx";
 import { IconChevronUp } from "../../shared/basic/icons/ChevronUp.tsx";
+import { getPaginationState } from "../../shared/navigation/pagination-utils.ts";
 import type { SizeVariant } from "../../shared/types.ts";
+
+/** Table 底部分页：与 shared Pagination / ui-view Table 视觉对齐 */
+const TABLE_PAGINATION_BTN_CLS =
+  "min-w-8 h-8 px-2 inline-flex items-center justify-center rounded-md text-sm font-medium border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 transition-colors";
+const TABLE_PAGINATION_ACTIVE_CLS =
+  "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 pointer-events-none";
 
 export type SortOrder = "ascend" | "descend" | null;
 
@@ -2171,31 +2180,83 @@ export function Table<
           )}
         </table>
       </div>
-      {paginationEnabled && (
-        <div class="flex items-center justify-between gap-4 mt-2 text-sm text-slate-600 dark:text-slate-400">
-          <span>
-            第 {currentPage} / {totalPages} 页，共 {total} 条
-          </span>
-          <div class="flex items-center gap-1">
-            <button
-              type="button"
-              class="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
-              disabled={currentPage <= 1}
-              onClick={() => handlePageChange(currentPage - 1)}
-            >
-              上一页
-            </button>
-            <button
-              type="button"
-              class="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
-              disabled={currentPage >= totalPages}
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
-              下一页
-            </button>
-          </div>
-        </div>
-      )}
+      {paginationEnabled && (() => {
+        const {
+          safeCurrent,
+          from,
+          to,
+          canPrev,
+          canNext,
+          pages: pageButtons,
+        } = getPaginationState(
+          currentPage,
+          pageSize,
+          total,
+          totalPages,
+        );
+        const totalHint = total > 0
+          ? `第 ${from}–${to} 条 / 共 ${total} 条`
+          : `共 ${total} 条`;
+        return (
+          <nav
+            role="navigation"
+            aria-label="表格分页"
+            class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-3 pt-3 border-t border-slate-200 dark:border-slate-700"
+          >
+            <span class="text-sm text-slate-600 dark:text-slate-400 tabular-nums shrink-0">
+              {totalHint}
+              <span class="text-slate-400 dark:text-slate-500 mx-1.5">·</span>
+              第 {safeCurrent} / {totalPages} 页
+            </span>
+            <div class="flex flex-wrap items-center gap-1">
+              <button
+                type="button"
+                class={TABLE_PAGINATION_BTN_CLS}
+                disabled={!canPrev}
+                aria-label="上一页"
+                onClick={() => handlePageChange(safeCurrent - 1)}
+              >
+                <IconChevronLeft class="w-4 h-4" />
+              </button>
+              {pageButtons.map((p, i) =>
+                p < 0
+                  ? (
+                    <span
+                      key={`ellipsis-${i}`}
+                      class="min-w-8 h-8 flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm"
+                    >
+                      …
+                    </span>
+                  )
+                  : (
+                    <button
+                      key={p}
+                      type="button"
+                      class={twMerge(
+                        TABLE_PAGINATION_BTN_CLS,
+                        safeCurrent === p && TABLE_PAGINATION_ACTIVE_CLS,
+                      )}
+                      aria-label={`第 ${p} 页`}
+                      aria-current={safeCurrent === p ? "page" : undefined}
+                      onClick={() => handlePageChange(p)}
+                    >
+                      {p}
+                    </button>
+                  )
+              )}
+              <button
+                type="button"
+                class={TABLE_PAGINATION_BTN_CLS}
+                disabled={!canNext}
+                aria-label="下一页"
+                onClick={() => handlePageChange(safeCurrent + 1)}
+              >
+                <IconChevronRight class="w-4 h-4" />
+              </button>
+            </div>
+          </nav>
+        );
+      })()}
     </div>
   );
 }
