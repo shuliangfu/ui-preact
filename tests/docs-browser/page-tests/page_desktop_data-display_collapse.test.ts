@@ -4,32 +4,18 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/data-display/collapse";
 
 describe("文档页 E2E：/desktop/data-display/collapse（Collapse 折叠）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("可展开/折叠首块并完成浅层控件探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(450);
-    const text = await env.getMainText(t);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(450);
+    const text = await sharedEnv.getMainText(t);
     expect(text.length).toBeGreaterThanOrEqual(36);
     expect(text).toMatch(/Collapse|折叠/i);
     expect(await clickFirstCollapseHeaderHere(t)).toBe(true);
@@ -41,8 +27,8 @@ describe("文档页 E2E：/desktop/data-display/collapse（Collapse 折叠）", 
    */
   it("严格·受控 + 多开", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "受控 + 多开";
       const main = document.querySelector("main");
@@ -149,8 +135,8 @@ describe("文档页 E2E：/desktop/data-display/collapse（Collapse 折叠）", 
    */
   it("严格·accordion + bordered=false", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "accordion + bordered=false";
       const main = document.querySelector("main");
@@ -257,8 +243,8 @@ describe("文档页 E2E：/desktop/data-display/collapse（Collapse 折叠）", 
    */
   it("严格·showArrow=false / size=sm", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "showArrow=false / size=sm";
       const main = document.querySelector("main");

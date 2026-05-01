@@ -28,8 +28,27 @@ export function getConfig(): Readonly<ConfigProviderConfig> {
 }
 
 /**
- * 设置全局配置（供 ConfigProvider 内部调用）。
+ * 判断两处配置是否一致，避免 ConfigProvider 每帧写入相同内容仍替换对象引用（与 ui-view 文档页一致）。
+ */
+function configFieldsEqual(
+  a: ConfigProviderConfig,
+  b: ConfigProviderConfig,
+): boolean {
+  return (
+    Object.is(a.theme, b.theme) &&
+    Object.is(a.locale, b.locale) &&
+    Object.is(a.componentSize, b.componentSize) &&
+    Object.is(a.prefixCls, b.prefixCls)
+  );
+}
+
+/**
+ * 设置全局配置（供 ConfigProvider 内部调用）；值未变时不替换，减轻与 `getConfig()` 联用的重渲染风险。
  */
 export function setConfig(config: ConfigProviderConfig): void {
-  currentConfig = { ...config };
+  const next = { ...config };
+  if (configFieldsEqual(currentConfig, next)) {
+    return;
+  }
+  currentConfig = next;
 }

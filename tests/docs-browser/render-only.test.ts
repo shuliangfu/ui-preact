@@ -1,27 +1,17 @@
 /**
  * @fileoverview 纯展示类文档页：专用断言写在**本文件**内。路由列表见 `component-catalog.ts` 的 {@link RENDER_ONLY_DOC_SPECS}。
+ * 所有测试共享全局单例 dev server。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
+import { describe, expect, it } from "@dreamer/test";
 import {
   RENDER_ONLY_DOC_SPECS,
   type RenderOnlyDocSpec,
 } from "./component-catalog.ts";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "./helpers.ts";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "./helpers.ts";
 
 /**
  * 纯展示页断言（仅本文件使用）：`main` 正文、可选 canvas/svg 数量。
- * @param t 浏览器上下文
- * @param env docs 环境
- * @param path 路由
- * @param spec 断言字段
  */
 async function assertRenderOnlyDocPage(
   t: {
@@ -30,7 +20,6 @@ async function assertRenderOnlyDocPage(
       evaluate: (fn: () => unknown) => Promise<unknown>;
     };
   },
-  env: ReturnType<typeof createDocsBrowserTestEnv>,
   path: string,
   spec: Pick<
     RenderOnlyDocSpec,
@@ -38,12 +27,12 @@ async function assertRenderOnlyDocPage(
   >,
 ): Promise<void> {
   if (!t?.browser?.goto) return;
-  await env.goto(t, path);
-  await env.delay(550);
-  let text = await env.getMainText(t);
+  await sharedEnv.goto(t, path);
+  await sharedEnv.delay(550);
+  let text = await sharedEnv.getMainText(t);
   if (text.length < 24) {
-    await env.delay(500);
-    text = await env.getMainText(t);
+    await sharedEnv.delay(500);
+    text = await sharedEnv.getMainText(t);
   }
   if (text.length === 0) {
     text = (await t.browser!.evaluate(() =>
@@ -71,25 +60,23 @@ async function assertRenderOnlyDocPage(
   }
 }
 
-describe("docs 纯展示页渲染（专用断言，每页独立 dev）", () => {
-  afterAll(async () => {
-    await cleanupAllBrowsers();
-  });
-
+describe("docs 纯展示页渲染（共享 dev）", () => {
   for (const spec of RENDER_ONLY_DOC_SPECS) {
-    describe(`${spec.label} ${spec.path}`, () => {
-      const env = createDocsBrowserTestEnv();
-      beforeAll(() => env.start());
-      afterAll(() => env.stopServerOnly());
-      it("main 正文与结构达标", async (t) => {
-        if (!t?.browser) return;
-        await assertRenderOnlyDocPage(t, env, spec.path, {
-          patterns: spec.patterns,
-          minMainLength: spec.minMainLength,
-          minCanvasesInMain: spec.minCanvasesInMain,
-          minSvgsInMain: spec.minSvgsInMain,
-        });
-      }, DOCS_BROWSER_CONFIG);
-    });
+    it(`${spec.label} ${spec.path}`, async (t) => {
+      if (!t?.browser) return;
+      await assertRenderOnlyDocPage(t, spec.path, {
+        patterns: spec.patterns,
+        minMainLength: spec.minMainLength,
+        minCanvasesInMain: spec.minCanvasesInMain,
+        minSvgsInMain: spec.minSvgsInMain,
+      });
+    }, DOCS_BROWSER_CONFIG);
   }
+
+  it("cleanup", async () => {
+    await sharedEnv.cleanup();
+  }, {
+    sanitizeOps: false,
+    sanitizeResources: false,
+  });
 });

@@ -4,30 +4,16 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/other/theme-colors";
 
 describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("本页关键词命中且 main 内完成浅层交互探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await runKeywordAndShallowHere(t, env, DOC_PATH, [
+    await runKeywordAndShallowHere(t, DOC_PATH, [
       /主题|Theme|颜色/i,
     ]);
   }, DOCS_BROWSER_CONFIG);
@@ -37,8 +23,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·说明", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "说明";
       const main = document.querySelector("main");
@@ -145,8 +131,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·默认 default", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "默认 default";
       const main = document.querySelector("main");
@@ -253,8 +239,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·主要 primary", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "主要 primary";
       const main = document.querySelector("main");
@@ -361,8 +347,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·次要 secondary", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "次要 secondary";
       const main = document.querySelector("main");
@@ -469,8 +455,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·语义：成功 / 警告 / 危险 / 信息", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "语义：成功 / 警告 / 危险 / 信息";
       const main = document.querySelector("main");
@@ -577,8 +563,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·绿色 / 红色 / 蓝色", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "绿色 / 红色 / 蓝色";
       const main = document.querySelector("main");
@@ -685,8 +671,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·黄色 / 琥珀 / 紫色 / 灰色", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "黄色 / 琥珀 / 紫色 / 灰色";
       const main = document.querySelector("main");
@@ -793,8 +779,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·棕色 / 橙色 / 粉色 / 靛蓝", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "棕色 / 橙色 / 粉色 / 靛蓝";
       const main = document.querySelector("main");
@@ -901,8 +887,8 @@ describe("文档页 E2E：/desktop/other/theme-colors（主题色）", () => {
    */
   it("严格·翠绿 / 青 / 柠绿 / 青绿 teal", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "翠绿 / 青 / 柠绿 / 青绿 teal";
       const main = document.querySelector("main");
@@ -1093,8 +1079,6 @@ async function shallowInteractMainHere(
   }
 }
 
-type DocsEnvLike = ReturnType<typeof createDocsBrowserTestEnv>;
-
 /**
  * 本文件内：打开文档、断言关键词、再执行 {@link shallowInteractMainHere}。
  */
@@ -1105,18 +1089,17 @@ async function runKeywordAndShallowHere(
       evaluate: (fn: () => unknown) => Promise<unknown>;
     };
   },
-  env: DocsEnvLike,
   path: string,
   patterns: RegExp[],
   minLen = 32,
 ): Promise<void> {
   if (!t?.browser?.goto) return;
-  await env.goto(t, path);
-  await env.delay(450);
-  let text = await env.getMainText(t);
+  await sharedEnv.goto(t, path);
+  await sharedEnv.delay(450);
+  let text = await sharedEnv.getMainText(t);
   if (text.length < minLen) {
-    await env.delay(550);
-    text = await env.getMainText(t);
+    await sharedEnv.delay(550);
+    text = await sharedEnv.getMainText(t);
   }
   if (text.length === 0) {
     text = (await t.browser!.evaluate(() =>

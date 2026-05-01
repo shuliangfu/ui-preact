@@ -4,32 +4,18 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/navigation/pagination";
 
 describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("分页「下一页」可点并完成浅层控件探针", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(450);
-    const text = await env.getMainText(t);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(450);
+    const text = await sharedEnv.getMainText(t);
     expect(text.length).toBeGreaterThanOrEqual(36);
     expect(text).toMatch(/Pagination|分页/i);
     expect(await clickPaginationNextHere(t)).toBe(true);
@@ -42,8 +28,8 @@ describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）"
    */
   it("完整示例：点击页码 2 后当前页指示须更新", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     await t.browser.evaluate(() => {
       const needle =
         "完整（total + pageSizeOptions + showTotal + showQuickJumper）";
@@ -69,7 +55,7 @@ describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）"
         return;
       }
     });
-    await env.delay(200);
+    await sharedEnv.delay(200);
     const currentIsPage2 = await t.browser.evaluate(() => {
       const needle =
         "完整（total + pageSizeOptions + showTotal + showQuickJumper）";
@@ -101,8 +87,8 @@ describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）"
     "严格·完整（total + pageSizeOptions + showTotal + showQuickJumper）",
     async (t) => {
       if (!t?.browser?.goto) return;
-      await env.goto(t, DOC_PATH);
-      await env.delay(520);
+      await sharedEnv.goto(t, DOC_PATH);
+      await sharedEnv.delay(520);
       const ok = await t.browser.evaluate(() => {
         const needle =
           "完整（total + pageSizeOptions + showTotal + showQuickJumper）";
@@ -212,8 +198,8 @@ describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）"
    */
   it("严格·totalPages 直接指定总页数", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "totalPages 直接指定总页数";
       const main = document.querySelector("main");
@@ -320,8 +306,8 @@ describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）"
    */
   it("严格·极简模式（showPageNumbers=false）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "极简模式（showPageNumbers=false）";
       const main = document.querySelector("main");
@@ -428,8 +414,8 @@ describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）"
    */
   it("严格·disabled", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "disabled";
       const main = document.querySelector("main");
@@ -536,8 +522,8 @@ describe("文档页 E2E：/desktop/navigation/pagination（Pagination 分页）"
    */
   it("严格·syncUrl（与 URL ?page=1&pageSize=10 同步）", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "syncUrl（与 URL ?page=1&pageSize=10 同步）";
       const main = document.querySelector("main");

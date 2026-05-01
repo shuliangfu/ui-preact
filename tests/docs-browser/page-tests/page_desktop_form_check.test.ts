@@ -4,32 +4,18 @@
  * Button 全量交互见同目录上级 `interactive-button-full.test.ts`（本包不为 /desktop/basic/button 另建页测文件）。
  */
 
-import {
-  afterAll,
-  beforeAll,
-  cleanupAllBrowsers,
-  describe,
-  expect,
-  it,
-} from "@dreamer/test";
-import { createDocsBrowserTestEnv, DOCS_BROWSER_CONFIG } from "../helpers.ts";
+import { describe, expect, it } from "@dreamer/test";
+import { DOCS_BROWSER_CONFIG, sharedEnv } from "../helpers.ts";
 
 /** 固定为本文档 path，便于复制到其他页时改为对应路由 */
 const DOC_PATH = "/desktop/form/check";
 
 describe("文档页 E2E：/desktop/form/check（Checkbox / Radio / Switch 合页）", () => {
-  const env = createDocsBrowserTestEnv();
-  beforeAll(() => env.start());
-  afterAll(async () => {
-    await env.stopServerOnly();
-    await cleanupAllBrowsers();
-  });
-
   it("合页内 Checkbox、Radio、Switch 均可点到", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(450);
-    const text = await env.getMainText(t);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(450);
+    const text = await sharedEnv.getMainText(t);
     expect(text.length).toBeGreaterThanOrEqual(48);
     expect(text).toMatch(/Checkbox|复选|Radio|单选|Switch|开关/i);
     expect(await clickFirstCheckboxHere(t)).toBe(true);
@@ -42,8 +28,8 @@ describe("文档页 E2E：/desktop/form/check（Checkbox / Radio / Switch 合页
    */
   it("首个 checkbox 可连点两次切换状态", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(450);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(450);
     const ok = await t.browser.evaluate(() => {
       const main = document.querySelector("main");
       const cb = main?.querySelector<HTMLInputElement>(
@@ -65,8 +51,8 @@ describe("文档页 E2E：/desktop/form/check（Checkbox / Radio / Switch 合页
    */
   it("严格·Checkbox", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "Checkbox";
       const main = document.querySelector("main");
@@ -173,8 +159,8 @@ describe("文档页 E2E：/desktop/form/check（Checkbox / Radio / Switch 合页
    */
   it("严格·CheckboxGroup", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "CheckboxGroup";
       const main = document.querySelector("main");
@@ -281,8 +267,8 @@ describe("文档页 E2E：/desktop/form/check（Checkbox / Radio / Switch 合页
    */
   it("严格·RadioGroup", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "RadioGroup";
       const main = document.querySelector("main");
@@ -389,8 +375,8 @@ describe("文档页 E2E：/desktop/form/check（Checkbox / Radio / Switch 合页
    */
   it("严格·Switch 基础与自定义文案", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "Switch 基础与自定义文案";
       const main = document.querySelector("main");
@@ -497,8 +483,8 @@ describe("文档页 E2E：/desktop/form/check（Checkbox / Radio / Switch 合页
    */
   it("严格·Switch disabled", async (t) => {
     if (!t?.browser?.goto) return;
-    await env.goto(t, DOC_PATH);
-    await env.delay(520);
+    await sharedEnv.goto(t, DOC_PATH);
+    await sharedEnv.delay(520);
     const ok = await t.browser.evaluate(() => {
       const needle = "Switch disabled";
       const main = document.querySelector("main");
