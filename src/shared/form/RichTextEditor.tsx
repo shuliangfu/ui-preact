@@ -2150,6 +2150,17 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
     hideFocusRing = false,
   } = props;
 
+  /**
+   * 跨重渲染复用同一编辑区 DOM `id`。若每次渲染 `Math.random()` 换新 id，页脚统计里 `getElementById` 会与真实节点错位，
+   * 字数退回按受控 `value` 计算，出现「编辑区看似空、字数却是 props 长度」的现象。
+   */
+  const rteDomIdRef = useRef<string | undefined>(undefined);
+  const editorId = id != null && id !== ""
+    ? (rteDomIdRef.current = id)
+    : (rteDomIdRef.current ??= `rte-${
+      globalThis.crypto.randomUUID().replace(/-/g, "").slice(0, 10)
+    }`);
+
   const toolbarGroups = customToolbar
     ? normalizeToolbarConfig(customToolbar)
     : getToolbarByPreset(toolbarPreset);
@@ -2160,7 +2171,6 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
    */
   let suppressEditorFocusHistoryRefresh = false;
 
-  const editorId = id ?? `rte-${Math.random().toString(36).slice(2, 9)}`;
   const uploadInputId = `${editorId}-upload`;
 
   /**
