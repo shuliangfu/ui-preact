@@ -2117,10 +2117,12 @@ function isHistoryToolbarDisabled(
 }
 
 /**
- * 可编辑区底纹（聚焦高亮由根节点 `has-[[data-rte-editor]:focus]` 改边框色，此处聚焦时 `border-transparent` 避免与根双线）。
+ * 可编辑区底纹。外框仅由根节点 `*-root` 的 `border` 绘制；此处用 `border-0`，避免与根在左/右/下叠成双线（原先 `border border-t-0` 与根整圈边框重复）。
+ * 工具栏与正文分界仍由 {@link toolbarWrapCls} 的 `border-b` 承担；聚焦高亮由根 `has-[[data-rte-editor]:focus]` 改外框色。
+ * 内层不设 `focus:border-transparent`：`border-0` 下边色类无视觉效果，且 `hideFocusRing` 仅作用于根与工具栏控件的 ring，不依赖此处类名。
  */
 const editorSurface =
-  "w-full min-h-[120px] px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-t-0 border-slate-300 dark:border-slate-600 focus:outline-none overflow-auto [&_p]:mb-2 [&_p]:mt-0 [&_p:last-child]:mb-0 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:bg-slate-100 [&_pre]:dark:bg-slate-700 [&_pre]:p-2 [&_pre]:rounded [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:dark:bg-slate-700 [&_th]:p-2 [&_td]:border [&_td]:border-slate-300 [&_td]:p-2";
+  "w-full min-h-[120px] px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border-0 focus:outline-none overflow-auto [&_p]:mb-2 [&_p]:mt-0 [&_p:last-child]:mb-0 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:bg-slate-100 [&_pre]:dark:bg-slate-700 [&_pre]:p-2 [&_pre]:rounded [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:dark:bg-slate-700 [&_th]:p-2 [&_td]:border [&_td]:border-slate-300 [&_td]:p-2";
 
 /** 查找条内小型文本框底纹（不含 ring） */
 const findBarInputSurface =
@@ -3464,7 +3466,6 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
           class={twMerge(
             editorSurface,
             srcOn && "hidden",
-            !hideFocusRing && "focus:border-transparent",
             readOnly && editorReadOnlyCls,
             "empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400 dark:empty:before:text-slate-500",
           )}
@@ -3517,7 +3518,6 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
             editorSurface,
             "resize-y font-mono text-xs whitespace-pre-wrap wrap-break-word tab-size-2",
             !srcOn && "hidden",
-            !hideFocusRing && "focus:border-transparent",
             readOnly && editorReadOnlyCls,
           )}
           style={minHeight ? { minHeight } : undefined}
