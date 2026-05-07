@@ -2975,56 +2975,65 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
 
   /**
    * 将受控 `value`（HTML 字符串）同步到 contenteditable。
-   * `value` 为无参函数时在此追踪 signal；`ref` 仅用 `createRef` 持有节点。
+   * `value` 为无参函数时在此追踪 signal；`ref` 仅用 `useRef` 持有节点。
    * **获焦时不同步**：由 {@link rteEditorHasFocus} 与 {@link rteAnyOverlayOpen}（链接 Modal + 工具栏通用 Modal）门禁，杜绝写 `innerHTML` 导致选区丢失。
+   *
+   * 首帧 `editorHostRef.current` 常仍为 null，若直接 return 则 effect 不会因 ref 赋值再跑，受控 HTML 永远不写入。
+   * **先读受控依赖，再在微任务有限次重试**直至 ref 就绪。
    *
    * @see editorHostRef
    */
   effect(() => {
-    const el = editorHostRef.current;
-    if (!el) return;
-    /** 源码模式由 {@link rteSourceHtml} 与 `<textarea>` 维护，勿用受控 `value` 覆盖可视区 `innerHTML` */
     if (rteSourceMode.value) return;
-    /** 见 {@link rteBlockPropsInnerHtmlAfterSourceExit}：避免切回可视瞬间被旧 `value` 清空 */
     if (rteBlockPropsInnerHtmlAfterSourceExit) return;
     const v = readMaybeSignal(value);
     if (v === undefined) return;
+
     /**
-     * 尚未记过撤销对照基准时：仅在**非获焦**且**无弹层**时初始化。
-     * 若 `editorHostRef` 晚于首次 effect 就绪，用户已输入后 effect 才跑到此处且曾把本块放在 `rteEditorHasFocus` 检查**之前**，
-     * 会用「已含当前输入」的 `innerHTML` 当基准 → 与 `refreshHistoryNavState` 里 `currentHtml` 恒等 → 撤销永灰。
-     * 获焦后仍未有基准时改由编辑区 {@link onFocus} 用当时受控值写入。
+     * 在 ref 已就绪的编辑区节点上执行受控 innerHTML 同步。
+     *
+     * @param el - contenteditable 根节点
      */
-    if (
-      lastSyncedFromPropsHtml === null &&
-      !rteEditorHasFocus &&
-      !rteAnyOverlayOpen()
-    ) {
-      /** 仅当 DOM 已与受控值一致时建撤销基准，避免 skipSync 导致从未写 innerHTML 却先把基准设成 v */
-      if (rteHtmlLooselyEquals(el.innerHTML, v)) {
+    const syncControlledHtmlToEditor = (el: HTMLDivElement): void => {
+      if (
+        lastSyncedFromPropsHtml === null &&
+        !rteEditorHasFocus &&
+        !rteAnyOverlayOpen()
+      ) {
+        if (rteHtmlLooselyEquals(el.innerHTML, v)) {
+          lastSyncedFromPropsHtml = v;
+          queueMicrotask(() => refreshHistoryNavState());
+        }
+      }
+      if (rteEditorHasFocus || rteAnyOverlayOpen()) {
+        return;
+      }
+      const skipSync = shouldSkipControlledInnerHtmlSync(editorId, el);
+      if (skipSync) {
+        return;
+      }
+      if (!rteHtmlLooselyEquals(el.innerHTML, v)) {
+        el.innerHTML = v;
         lastSyncedFromPropsHtml = v;
+        rteRedoEligibleAfterUndo = false;
+        rteWordCountDomTick.value = rteWordCountDomTick.value + 1;
         queueMicrotask(() => refreshHistoryNavState());
       }
-    }
-    /**
-     * 编辑区获焦时 DOM 只能由用户输入 / execCommand 维护；任何受控回写都会重置选区（光标跳行首等）。
-     * 链接弹层在 portal 内，焦点离开编辑区时也不能用可能滞后的 `value` 覆盖正文。
-     */
-    if (rteEditorHasFocus || rteAnyOverlayOpen()) {
-      /** 勿在此每帧 `queueMicrotask(refresh)`：`value` 与 {@link historyNavState} 连锁会打爆主线程；撤销态由 onInput/onFocus/工具栏路径刷新即可 */
-      return;
-    }
-    const skipSync = shouldSkipControlledInnerHtmlSync(editorId, el);
-    if (skipSync) {
-      return;
-    }
-    if (!rteHtmlLooselyEquals(el.innerHTML, v)) {
-      el.innerHTML = v;
-      lastSyncedFromPropsHtml = v;
-      rteRedoEligibleAfterUndo = false;
-      rteWordCountDomTick.value = rteWordCountDomTick.value + 1;
-      queueMicrotask(() => refreshHistoryNavState());
-    }
+    };
+
+    let refWaitAttempts = 0;
+    const run = (): void => {
+      const el = editorHostRef.current;
+      if (!el) {
+        refWaitAttempts += 1;
+        if (refWaitAttempts < 48) {
+          queueMicrotask(run);
+        }
+        return;
+      }
+      syncControlledHtmlToEditor(el);
+    };
+    run();
   });
 
   const handleKeyDown = (e: Event) => {
