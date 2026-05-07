@@ -391,10 +391,14 @@ function getPlainText(html: string): string {
   }
 }
 
-/** 统计字数（按空格分词，过滤空串） */
+/** 统计字数：中日韩字符逐字计数，英文/数字按连续词组计数。 */
 function getWordCount(html: string): number {
   const text = getPlainText(html).trim();
-  return text ? text.split(/\s+/).filter(Boolean).length : 0;
+  if (!text) return 0;
+  const matches = text.match(
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]|[\p{L}\p{N}]+/gu,
+  );
+  return matches?.length ?? 0;
 }
 
 /** 序列化时按 void 处理、不输出闭合标签的 HTML 元素 */
