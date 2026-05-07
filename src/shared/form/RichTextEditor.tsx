@@ -1469,8 +1469,10 @@ function wrapRteLeadingRootTextInParagraph(editor: HTMLDivElement): boolean {
 
 /**
  * 受控 `value` 重绘时是否禁止用 props 覆盖编辑区 `innerHTML`。
- * 焦点在组件根（工具栏、查找条、编辑区）内时覆盖会破坏「查找/替换」流程，且易与
- * {@link refreshHistoryNavState} 的焦点抖动叠加成问题。
+ * 焦点在 **contenteditable** 上或选区锚点在其内时禁止（见 {@link isEditorActiveOrSelectionInside}），避免重置光标。
+ * 焦点在 **查找条**（`#${editorId}-findbar`）内时禁止，避免破坏查找/替换流程。
+ * 仅工具栏按钮获焦时**不**在此返回 true：工具栏 `mousedown` 已尽量保留编辑区选区，若仍用「整棵 root 含工具栏」跳过同步，
+ * 会在挂载后焦点落在工具栏等场景下导致从未写入 `innerHTML`，出现占位符与字数按受控值统计不一致。
  *
  * @param editorId - 编辑区元素 id（与根节点 `id` 为 `${editorId}-root` 对应）
  * @param editorEl - contenteditable 根节点
@@ -1482,9 +1484,9 @@ function shouldSkipControlledInnerHtmlSync(
   const doc = globalThis.document;
   if (!doc) return false;
   if (isEditorActiveOrSelectionInside(editorEl)) return true;
-  const root = doc.getElementById(`${editorId}-root`);
   const ae = doc.activeElement;
-  if (root && ae instanceof Node && root.contains(ae)) return true;
+  const findBar = doc.getElementById(`${editorId}-findbar`);
+  if (findBar && ae instanceof Node && findBar.contains(ae)) return true;
   return false;
 }
 
@@ -2212,6 +2214,11 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
   const rteSourceHtml = signal("");
 
   /**
+   * 驱动页脚字数 `computed` 在「仅 DOM 变、受控 value 未变」时重算；在 {@link emitChange} 末尾与 props→`innerHTML` 同步成功后递增。
+   */
+  const rteWordCountDomTick = signal(0);
+
+  /**
    * 仅在 canUndo/canRedo 与当前 signal 不同时写入。
    * `signal` 对对象用 `Object.is`：每次 `value = { canUndo, canRedo }` 都是新引用，即使用户未操作也会触发订阅 →
    * 重渲染 → ref 再 `queueMicrotask(refresh)`，形成更新风暴导致页面极卡。
@@ -2619,6 +2626,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         | null;
       if (el) el.value = h;
     }
+    rteWordCountDomTick.value = rteWordCountDomTick.value + 1;
   };
 
   /** 插入链接弹层开关；{@link Modal} 经下方 JSX 中 {@link createPortal} 挂到 `body`。 */
@@ -2930,16 +2938,26 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
   const showToolbar = !readOnly && toolbarGroups.length > 0;
 
   /**
-   * 页脚「字数」子树：在 `computed` 内读受控 `value`，仅本段随父级 value/signal 更新。
-   *
-   * **禁止**在 {@link RichTextEditor} 同步函数体顶层调用 `value()` 算字数：此时读 signal 会把依赖挂到**外层**（如 FormItem）；
-   * 用户输入触发 `onChange` → 父级更新 → 整块表单项重挂 → contenteditable 失焦。
-   * 与 {@link RteToolbarReactiveIsland} 的 `historyNavState` 隔离同因。
+   * 页脚「字数」子树：在 `computed` 内订阅 {@link rteWordCountDomTick} 与受控 `value`。
+   * 可视化模式下优先用编辑区 DOM 的 `innerHTML` 统计，避免受控 props 与 DOM 短暂不一致时仍按旧 HTML 计字数。
+   * 源码模式用 {@link rteSourceHtml}。无 `document` 或节点未挂载时回退到受控 `value`。
    */
   function RteWordCountReactiveIsland() {
-    const wordCountMemo = computed(() =>
-      getWordCount(readMaybeSignal(value) ?? "")
-    );
+    const wordCountMemo = computed(() => {
+      readMaybeSignal(value);
+      rteWordCountDomTick.value;
+      if (rteSourceMode.value) {
+        return getWordCount(rteSourceHtml.value);
+      }
+      const doc = globalThis.document;
+      if (doc) {
+        const ed = doc.getElementById(editorId) as HTMLDivElement | null;
+        if (ed?.isConnected) {
+          return getWordCount(ed.innerHTML);
+        }
+      }
+      return getWordCount(readMaybeSignal(value) ?? "");
+    });
     return (
       <div
         class={twMerge(
@@ -2982,8 +3000,11 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
       !rteEditorHasFocus &&
       !rteAnyOverlayOpen()
     ) {
-      lastSyncedFromPropsHtml = v;
-      queueMicrotask(() => refreshHistoryNavState());
+      /** 仅当 DOM 已与受控值一致时建撤销基准，避免 skipSync 导致从未写 innerHTML 却先把基准设成 v */
+      if (rteHtmlLooselyEquals(el.innerHTML, v)) {
+        lastSyncedFromPropsHtml = v;
+        queueMicrotask(() => refreshHistoryNavState());
+      }
     }
     /**
      * 编辑区获焦时 DOM 只能由用户输入 / execCommand 维护；任何受控回写都会重置选区（光标跳行首等）。
@@ -3001,6 +3022,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
       el.innerHTML = v;
       lastSyncedFromPropsHtml = v;
       rteRedoEligibleAfterUndo = false;
+      rteWordCountDomTick.value = rteWordCountDomTick.value + 1;
       queueMicrotask(() => refreshHistoryNavState());
     }
   });
