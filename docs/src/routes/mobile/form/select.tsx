@@ -20,15 +20,15 @@ const OPTIONS = [
 const SELECT_API: DocsApiTableRow[] = [
   {
     name: "appearance",
-    type: `"dropdown" | "native"`,
+    type: `"dropdown"`,
     default: `"dropdown"`,
-    description: "自绘浮层；详见 shared 源码（移动入口无包装，与桌面一致）",
+    description: "保留字段以兼容旧代码；当前仅自绘下拉",
   },
   {
     name: "options",
     type: "SelectOption[]",
     default: "-",
-    description: "平铺选项；与 children 二选一场景见 shared 文档",
+    description: "平铺选项列表（必选；未传视为空列表）",
   },
   {
     name: "value",
@@ -73,7 +73,7 @@ const SELECT_API: DocsApiTableRow[] = [
     name: "children",
     type: "ComponentChildren",
     default: "-",
-    description: "无 options 时用于原生 option 子节点",
+    description: "已废弃；勿依赖，请改用 options",
   },
 ];
 
