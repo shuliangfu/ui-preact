@@ -7,6 +7,7 @@ import type { JSX } from "preact";
 import { twMerge } from "tailwind-merge";
 import { IconSearch } from "../basic/icons/Search.tsx";
 import type { SizeVariant } from "../types.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import { controlBlueFocusRing } from "./input-focus-ring.ts";
 import { commitMaybeSignal, type MaybeSignal } from "./maybe-signal.ts";
 
@@ -45,7 +46,23 @@ export interface SearchProps {
   name?: string;
   /** 原生 id */
   id?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultSearchMessages} */
+  messages?: Partial<SearchMessages>;
 }
+
+/** Search 内置文案 */
+export interface SearchMessages {
+  placeholder: string;
+  clear: string;
+  search: string;
+}
+
+/** 默认中文文案 */
+export const defaultSearchMessages: SearchMessages = {
+  placeholder: "搜索…",
+  clear: "清除",
+  search: "搜索",
+};
 
 const sizeClasses: Record<SizeVariant, string> = {
   xs: "px-2.5 py-1 pl-8 text-xs rounded-md",
@@ -55,10 +72,10 @@ const sizeClasses: Record<SizeVariant, string> = {
 };
 
 const inputSurface =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
 const btnSurface =
-  "absolute top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none disabled:opacity-50";
+  "absolute top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-hidden disabled:opacity-50";
 
 /** 清除按钮显隐由 CSS :has 控制，避免在组件内读 value 订阅导致失焦 */
 const clearBtnVisibleCls =
@@ -69,9 +86,8 @@ const clearBtnVisibleCls =
  */
 export function Search(props: SearchProps): JSX.Element {
   const {
-    size = "md",
+    size: sizeProp,
     disabled = false,
-    placeholder = "搜索…",
     value,
     class: className,
     onInput,
@@ -86,7 +102,12 @@ export function Search(props: SearchProps): JSX.Element {
     name,
     id,
     hideFocusRing = false,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultSearchMessages, ...messages };
+  const placeholder = props.placeholder ?? m.placeholder;
+  const size = resolveFormControlSize(sizeProp);
 
   const sizeCls = sizeClasses[size];
 
@@ -172,7 +193,7 @@ export function Search(props: SearchProps): JSX.Element {
           onSearch ? "right-10" : "right-2",
         )}
         disabled={disabled}
-        aria-label="清除"
+        aria-label={m.clear}
         onClick={handleClear}
       >
         <svg
@@ -198,7 +219,7 @@ export function Search(props: SearchProps): JSX.Element {
             "right-2",
           )}
           disabled={disabled}
-          aria-label="搜索"
+          aria-label={m.search}
           onClick={(e: Event) => {
             const input = (e.currentTarget as HTMLElement).parentElement
               ?.querySelector("input") as HTMLInputElement | null;

@@ -295,7 +295,7 @@ export function Tooltip(props: TooltipProps): JSX.Element {
             id={tooltipId}
             role="tooltip"
             class={twMerge(
-              "fixed z-[1070] pointer-events-none transition-opacity duration-150 opacity-100 visible",
+              "fixed z-1070 pointer-events-none transition-opacity duration-150 opacity-100 visible",
               overlayClass,
             )}
             style={{

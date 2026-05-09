@@ -6,6 +6,7 @@
 import type { JSX } from "preact";
 import { twMerge } from "tailwind-merge";
 import type { SizeVariant } from "../types.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import { compositeShellFocusRingFromInput } from "./input-focus-ring.ts";
 import {
   commitMaybeSignal,
@@ -52,7 +53,21 @@ export interface InputNumberProps {
   name?: string;
   /** 原生 id */
   id?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultInputNumberMessages} */
+  messages?: Partial<InputNumberMessages>;
 }
+
+/** InputNumber 内置文案 */
+export interface InputNumberMessages {
+  decrease: string;
+  increase: string;
+}
+
+/** 默认中文文案 */
+export const defaultInputNumberMessages: InputNumberMessages = {
+  decrease: "减少",
+  increase: "增加",
+};
 
 /**
  * 从 step 推断应保留的小数位数（支持普通小数；科学计数法按指数折算）。
@@ -108,7 +123,7 @@ const wrapRounded: Record<SizeVariant, string> = {
 
 /** 输入框本体：自身不画 ring；整圈高亮由外壳用 `:has(input:focus)` 控制 */
 const inputBase =
-  "min-w-0 flex-1 border-0 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+  "min-w-0 flex-1 border-0 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
 /**
  * 隐藏 `type="number"` 右侧原生上下箭头。
@@ -130,11 +145,24 @@ function InputNumberButtons(props: {
   max?: number;
   disabled: boolean;
   onTriggerChange: (newVal: number) => void;
+  /** 减少按钮 `aria-label` */
+  decreaseAriaLabel: string;
+  /** 增加按钮 `aria-label` */
+  increaseAriaLabel: string;
 }): JSX.Element {
-  const { value, step, min, max, disabled, onTriggerChange } = props;
+  const {
+    value,
+    step,
+    min,
+    max,
+    disabled,
+    onTriggerChange,
+    decreaseAriaLabel,
+    increaseAriaLabel,
+  } = props;
 
   const stepperBtnCls =
-    "flex-1 min-w-0 px-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none flex items-center justify-center text-sm font-medium";
+    "flex-1 min-w-0 px-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-hidden flex items-center justify-center text-sm font-medium";
 
   const raw = readMaybeSignal(value);
   const val = value === undefined || raw === undefined || raw === ""
@@ -162,7 +190,7 @@ function InputNumberButtons(props: {
           "border-r border-slate-300 dark:border-slate-600",
         )}
         disabled={!canDecrease}
-        aria-label="减少"
+        aria-label={decreaseAriaLabel}
         onClick={() => {
           if (Number.isNaN(num)) {
             onTriggerChange(roundByStepPrecision(min ?? 0, step));
@@ -178,7 +206,7 @@ function InputNumberButtons(props: {
         type="button"
         class={stepperBtnCls}
         disabled={!canIncrease}
-        aria-label="增加"
+        aria-label={increaseAriaLabel}
         onClick={() => {
           if (Number.isNaN(num)) {
             onTriggerChange(roundByStepPrecision(step, step));
@@ -199,7 +227,7 @@ function InputNumberButtons(props: {
  */
 export function InputNumber(props: InputNumberProps): JSX.Element {
   const {
-    size = "md",
+    size: sizeProp,
     disabled = false,
     placeholder,
     value,
@@ -218,7 +246,11 @@ export function InputNumber(props: InputNumberProps): JSX.Element {
     name,
     id,
     hideFocusRing = false,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultInputNumberMessages, ...messages };
+  const size = resolveFormControlSize(sizeProp);
 
   const sizeCls = sizeClasses[size];
 
@@ -293,6 +325,8 @@ export function InputNumber(props: InputNumberProps): JSX.Element {
         max={max}
         disabled={disabled}
         onTriggerChange={onTriggerChange}
+        decreaseAriaLabel={m.decrease}
+        increaseAriaLabel={m.increase}
       />
     </span>
   );

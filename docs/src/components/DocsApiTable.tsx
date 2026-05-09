@@ -14,16 +14,20 @@ export interface DocsApiTableRow {
  * 渲染四列表格（属性 / 类型 / 默认值 / 说明）。
  *
  * @param props.rows - 行数据
+ * @param props.nameColumnHeader - 首列表头；messages 文档建议「字段」
  */
-export function DocsApiTable(props: { rows: readonly DocsApiTableRow[] }) {
-  const { rows } = props;
+export function DocsApiTable(props: {
+  rows: readonly DocsApiTableRow[];
+  nameColumnHeader?: string;
+}) {
+  const { rows, nameColumnHeader = "属性" } = props;
   return (
     <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-600">
       <table class="w-full min-w-lg text-sm">
         <thead>
           <tr class="border-b border-slate-200 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/80">
             <th class="px-4 py-3 text-left font-medium text-slate-900 dark:text-slate-100">
-              属性
+              {nameColumnHeader}
             </th>
             <th class="px-4 py-3 text-left font-medium text-slate-900 dark:text-slate-100">
               类型

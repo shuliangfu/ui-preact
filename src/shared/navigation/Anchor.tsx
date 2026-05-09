@@ -17,7 +17,20 @@ export interface AnchorProps {
   activeKey?: string;
   onChange?: (key: string) => void;
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultAnchorMessages} */
+  messages?: Partial<AnchorMessages>;
 }
+
+/** Anchor 内置文案 */
+export interface AnchorMessages {
+  /** `nav` `aria-label` */
+  navAriaLabel: string;
+}
+
+/** 默认中文文案 */
+export const defaultAnchorMessages: AnchorMessages = {
+  navAriaLabel: "锚点导航",
+};
 
 /** 客户端用「当前路径 + hash」作为 href */
 function getAnchorHref(hashHref: string): string {
@@ -31,6 +44,11 @@ function getAnchorHref(hashHref: string): string {
  */
 export function Anchor(props: AnchorProps): JSX.Element {
   const { links, activeKey, onChange, class: className } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: AnchorMessages = {
+    ...defaultAnchorMessages,
+    ...(props.messages ?? {}),
+  };
 
   const handleClick = (e: Event, key: string, href: string) => {
     e.preventDefault();
@@ -47,7 +65,7 @@ export function Anchor(props: AnchorProps): JSX.Element {
   return (
     <nav
       class={twMerge("flex flex-col gap-1 text-sm", className)}
-      aria-label="锚点导航"
+      aria-label={m.navAriaLabel}
     >
       {links.map((link) => {
         const isActive = activeKey === link.key;

@@ -49,6 +49,20 @@ export type PopconfirmPlacement =
 /** `open`：布尔快照、`Signal<boolean>`（`useSignal` 返回值）或零参 getter（与 Modal `open` 同向） */
 export type PopconfirmOpenInput = ControlledOpenInput;
 
+/** Popconfirm 内置文案 */
+export interface PopconfirmMessages {
+  /** 「确定」按钮 */
+  ok: string;
+  /** 「取消」按钮 */
+  cancel: string;
+}
+
+/** 默认中文文案 */
+export const defaultPopconfirmMessages: PopconfirmMessages = {
+  ok: "确定",
+  cancel: "取消",
+};
+
 export interface PopconfirmProps {
   /** 是否打开（受控）；推荐 `open={signal}`，勿 `open={sig.value}` */
   open?: PopconfirmOpenInput;
@@ -85,6 +99,8 @@ export interface PopconfirmProps {
   class?: string;
   /** 面板 class */
   overlayClass?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultPopconfirmMessages}；`okText`/`cancelText` 优先级更高 */
+  messages?: Partial<PopconfirmMessages>;
 }
 
 /** 标记气泡面板根节点，供 document `click` 与 `composedPath` 判断是否点在面板内 */
@@ -112,7 +128,7 @@ const placementClasses: Record<PopconfirmPlacement, string> = {
  */
 function popconfirmArrowClass(placement: PopconfirmPlacement): string {
   const base =
-    "absolute z-[1] w-2 h-2 rotate-45 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 pointer-events-none";
+    "absolute z-1 w-2 h-2 rotate-45 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 pointer-events-none";
   if (placement.startsWith("top")) {
     return `${base} bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 border-t-0 border-l-0`;
   }
@@ -268,10 +284,15 @@ export function Popconfirm(props: PopconfirmProps): JSX.Element {
     };
   }, [isOpen, requestClose]);
 
+  /** 合并默认中文文案与外部传入 messages，再以显式 okText/cancelText 覆盖 */
+  const _msg: PopconfirmMessages = {
+    ...defaultPopconfirmMessages,
+    ...(props.messages ?? {}),
+  };
   const {
     title,
-    okText = "确定",
-    cancelText = "取消",
+    okText = _msg.ok,
+    cancelText = _msg.cancel,
     showIcon = true,
     arrow = true,
     children,

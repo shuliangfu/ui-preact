@@ -63,8 +63,10 @@ export interface ScrollListProps extends ScrollListListProps {
   onLoadMore?: () => void | Promise<void>;
   /** 禁用下拉刷新 */
   disabledPull?: boolean;
-  /** 无更多数据时底部提示文案 */
+  /** 无更多数据时底部提示文案；优先于 `messages.noMore` */
   noMoreText?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultScrollListMessages} */
+  messages?: Partial<ScrollListMessages>;
   /**
    * 交叉观察 `rootMargin`（扩根盒以提前/延后判定相交）。
    * 默认 **`0px 0px 0px 0px`**：须滚到列表底部哨兵实际进入滚动根可视区才触发；若需略提前可传如 `0px 0px 48px 0px`（仅扩底边）。
@@ -85,6 +87,17 @@ export interface ScrollListProps extends ScrollListListProps {
     | "pullDistance"
   >;
 }
+
+/** ScrollList 内置文案 */
+export interface ScrollListMessages {
+  /** `hasMore=false` 时底部提示 */
+  noMore: string;
+}
+
+/** 默认中文文案 */
+export const defaultScrollListMessages: ScrollListMessages = {
+  noMore: "没有更多了",
+};
 
 /** 与 ui-view `ScrollListRuntime` 对齐的、须跨渲染保留的门闩与 DOM 引用 */
 type ScrollListRuntime = {
@@ -248,13 +261,18 @@ function bindLoadMoreObserver(
  * @param props - 列表数据、刷新/加载回调与透传配置
  */
 export function ScrollList(props: ScrollListProps): JSX.Element {
+  /** 合并默认中文文案与外部传入 messages（noMoreText 优先） */
+  const scrollListMessages: ScrollListMessages = {
+    ...defaultScrollListMessages,
+    ...(props.messages ?? {}),
+  };
   const {
     class: className,
     listClass,
     refreshLoading,
     onRefresh,
     disabledPull = false,
-    noMoreText = "没有更多了",
+    noMoreText = scrollListMessages.noMore,
     pullRefreshTexts,
     items,
     renderItem,

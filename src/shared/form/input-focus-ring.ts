@@ -43,7 +43,7 @@ export function compositeShellFocusRingFromInput(show: boolean): string {
  * DatePicker / TimePicker / DateTimePicker 触发按钮共用底纹（不含聚焦 ring）。
  */
 export const pickerTriggerSurface =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-between gap-2 text-left";
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-between gap-2 text-left";
 
 /**
  * DatePicker / TimePicker / DateTimePicker 触发器尺寸（与 Input 的 `size` 档位对齐）。
@@ -61,4 +61,4 @@ export const pickerTriggerSizeClasses: Record<SizeVariant, string> = {
  * 需要全宽或触控修饰时由调用方再拼 `w-full`、`touch-manipulation` 等。
  */
 export const nativeSelectSurface =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors appearance-none cursor-pointer";
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors appearance-none cursor-pointer";

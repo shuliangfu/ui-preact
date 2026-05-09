@@ -42,7 +42,20 @@ export interface NavBarProps {
   zIndex?: number;
   /** 额外 class */
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultNavBarMessages} */
+  messages?: Partial<NavBarMessages>;
 }
+
+/** NavBar 内置文案 */
+export interface NavBarMessages {
+  /** 左侧无 `leftText` 时按钮的 `aria-label` 兜底（如返回） */
+  back: string;
+}
+
+/** 默认中文文案 */
+export const defaultNavBarMessages: NavBarMessages = {
+  back: "返回",
+};
 
 /**
  * 移动端顶部导航栏。
@@ -68,6 +81,11 @@ export function NavBar(props: NavBarProps): JSX.Element {
     zIndex = 1,
     class: className,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: NavBarMessages = {
+    ...defaultNavBarMessages,
+    ...(props.messages ?? {}),
+  };
 
   const hasLeft = leftSlot != null || leftText != null || leftArrow;
   const hasRight = rightSlot != null || rightText != null;
@@ -101,7 +119,7 @@ export function NavBar(props: NavBarProps): JSX.Element {
               )}
               disabled={leftDisabled}
               onClick={() => !leftDisabled && onClickLeft?.()}
-              aria-label={leftText ?? "返回"}
+              aria-label={leftText ?? m.back}
             >
               {leftArrow && <IconChevronLeft class="w-5 h-5 shrink-0" />}
               {leftText != null && leftText !== "" && <span>{leftText}</span>}

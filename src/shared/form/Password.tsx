@@ -10,12 +10,41 @@ import {
   autofillVisualClass,
   passwordNativeAutoComplete,
 } from "./input-autofill-classes.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import { controlBlueFocusRing } from "./input-focus-ring.ts";
 import {
   commitMaybeSignal,
   type MaybeSignal,
   readMaybeSignal,
 } from "./maybe-signal.ts";
+
+/**
+ * Password 内置文案。
+ */
+export interface PasswordMessages {
+  /** 显示密码按钮 `aria-label`（密码隐藏时） */
+  show: string;
+  /** 隐藏密码按钮 `aria-label`（密码可见时） */
+  hide: string;
+  /** 强度文案；参数为强度等级（已本地化） */
+  strengthText: (level: string) => string;
+  /** 强度等级：弱 */
+  strengthWeak: string;
+  /** 强度等级：中 */
+  strengthMedium: string;
+  /** 强度等级：强 */
+  strengthStrong: string;
+}
+
+/** 默认中文文案 */
+export const defaultPasswordMessages: PasswordMessages = {
+  show: "显示密码",
+  hide: "隐藏密码",
+  strengthText: (level) => `强度：${level}`,
+  strengthWeak: "弱",
+  strengthMedium: "中",
+  strengthStrong: "强",
+};
 
 export interface PasswordProps {
   /** 尺寸 */
@@ -62,6 +91,8 @@ export interface PasswordProps {
   newPassword?: boolean;
   /** 是否显示强度提示（弱/中/强） */
   showStrength?: boolean;
+  /** 多语言/自定义文案；未传字段走 {@link defaultPasswordMessages} */
+  messages?: Partial<PasswordMessages>;
 }
 
 const sizeClasses: Record<SizeVariant, string> = {
@@ -73,12 +104,18 @@ const sizeClasses: Record<SizeVariant, string> = {
 
 /** 与 `Input` 的 `inputSurfaceBase` 一致（autofill 长类由 `autofillVisualClass(autoComplete)` 按需合并） */
 const inputSurfaceBase =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
 /**
  * 根据密码字符串计算强度等级与展示用 Tailwind 文本色类。
+ *
+ * @param s - 当前密码
+ * @param messages - 已合并默认值的文案，用于弱/中/强本地化文本
  */
-function passwordStrengthMeta(s: string): { level: string; cls: string } {
+function passwordStrengthMeta(
+  s: string,
+  messages: PasswordMessages,
+): { level: string; cls: string } {
   let score = 0;
   if (s.length >= 6) score++;
   if (s.length >= 10) score++;
@@ -86,29 +123,42 @@ function passwordStrengthMeta(s: string): { level: string; cls: string } {
   if (/[a-zA-Z]/.test(s)) score++;
   if (/[^a-zA-Z0-9]/.test(s)) score++;
   if (score <= 2) {
-    return { level: "弱", cls: "text-red-600 dark:text-red-400" };
+    return {
+      level: messages.strengthWeak,
+      cls: "text-red-600 dark:text-red-400",
+    };
   }
   if (score <= 4) {
-    return { level: "中", cls: "text-amber-600 dark:text-amber-400" };
+    return {
+      level: messages.strengthMedium,
+      cls: "text-amber-600 dark:text-amber-400",
+    };
   }
-  return { level: "强", cls: "text-green-600 dark:text-green-400" };
+  return {
+    level: messages.strengthStrong,
+    cls: "text-green-600 dark:text-green-400",
+  };
 }
 
 /**
  * 强度文案：单独子组件以便仅该子树随受控值更新。
+ *
+ * @param props.value - 受控密码
+ * @param props.messages - 合并后的 {@link PasswordMessages}
  */
-function PasswordStrength(
-  props: { value?: MaybeSignal<string> },
-): JSX.Element | null {
+function PasswordStrength(props: {
+  value?: MaybeSignal<string>;
+  messages: PasswordMessages;
+}): JSX.Element | null {
   const s = readMaybeSignal(props.value) ?? "";
   if (s.length === 0) return null;
-  const { level, cls } = passwordStrengthMeta(s);
+  const { level, cls } = passwordStrengthMeta(s, props.messages);
   return (
     <span
       class={twMerge("block mt-1 text-xs", cls)}
       aria-live="polite"
     >
-      强度：{level}
+      {props.messages.strengthText(level)}
     </span>
   );
 }
@@ -118,7 +168,7 @@ function PasswordStrength(
  */
 export function Password(props: PasswordProps): JSX.Element {
   const {
-    size = "md",
+    size: sizeProp,
     disabled = false,
     placeholder,
     value,
@@ -139,7 +189,11 @@ export function Password(props: PasswordProps): JSX.Element {
     id,
     autoComplete,
     newPassword = false,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultPasswordMessages, ...messages };
+  const size = resolveFormControlSize(sizeProp);
 
   const sizeCls = sizeClasses[size];
   const nativeAutoComplete = passwordNativeAutoComplete(
@@ -209,11 +263,11 @@ export function Password(props: PasswordProps): JSX.Element {
         <button
           type="button"
           class={twMerge(
-            "absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none",
+            "absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-hidden",
             controlBlueFocusRing(!hideFocusRing),
           )}
           onClick={onToggleShow}
-          aria-label={showPassword ? "隐藏密码" : "显示密码"}
+          aria-label={showPassword ? m.hide : m.show}
           tabIndex={-1}
         >
           {showPassword
@@ -255,7 +309,7 @@ export function Password(props: PasswordProps): JSX.Element {
             )}
         </button>
       )}
-      {showStrength ? <PasswordStrength value={value} /> : null}
+      {showStrength ? <PasswordStrength value={value} messages={m} /> : null}
     </div>
   );
 }

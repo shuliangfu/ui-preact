@@ -116,7 +116,7 @@ const html = signal("<p>初始</p>");
 </FormItem>`;
 
 export default function FormRichTextEditor() {
-  const val = signal("<p>初始内容</p>");
+  const val = signal("");
   const valSimple = signal("");
   const valFull = signal("");
 

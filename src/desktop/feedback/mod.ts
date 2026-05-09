@@ -68,8 +68,9 @@ export type {
   ModalWidthInput,
   ModalWidthPrimitive,
 } from "./Modal.tsx";
-export { Dialog } from "./Dialog.tsx";
+export { defaultDialogMessages, Dialog } from "./Dialog.tsx";
 export type {
+  DialogMessages,
   DialogMobileLayout,
   DialogProps,
   DialogVariant,
@@ -78,8 +79,9 @@ export { Tooltip } from "./Tooltip.tsx";
 export type { TooltipPlacement, TooltipProps } from "./Tooltip.tsx";
 export { Popover } from "./Popover.tsx";
 export type { PopoverPlacement, PopoverProps } from "./Popover.tsx";
-export { Popconfirm } from "./Popconfirm.tsx";
+export { defaultPopconfirmMessages, Popconfirm } from "./Popconfirm.tsx";
 export type {
+  PopconfirmMessages,
   PopconfirmOpenInput,
   PopconfirmPlacement,
   PopconfirmProps,

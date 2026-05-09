@@ -69,8 +69,9 @@ export type { PullRefreshProps, PullRefreshStatus } from "./PullRefresh.tsx";
 export { SwipeCell } from "./SwipeCell.tsx";
 export type { SwipeCellAction, SwipeCellProps } from "./SwipeCell.tsx";
 
-export { Dialog } from "./Dialog.tsx";
+export { defaultDialogMessages, Dialog } from "./Dialog.tsx";
 export type {
+  DialogMessages,
   DialogMobileLayout,
   DialogProps,
   DialogVariant,

@@ -16,7 +16,23 @@ export interface PageHeaderProps {
   extra?: ComponentChildren;
   footer?: ComponentChildren;
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultPageHeaderMessages} */
+  messages?: Partial<PageHeaderMessages>;
 }
+
+/** PageHeader 内置文案 */
+export interface PageHeaderMessages {
+  /** 面包屑 `nav` `aria-label` */
+  breadcrumbAriaLabel: string;
+  /** 返回按钮 `aria-label` */
+  back: string;
+}
+
+/** 默认中文文案 */
+export const defaultPageHeaderMessages: PageHeaderMessages = {
+  breadcrumbAriaLabel: "面包屑",
+  back: "返回",
+};
 
 /**
  * 页面顶栏：标题区与可选面包屑。
@@ -31,6 +47,11 @@ export function PageHeader(props: PageHeaderProps): JSX.Element {
     footer,
     class: className,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: PageHeaderMessages = {
+    ...defaultPageHeaderMessages,
+    ...(props.messages ?? {}),
+  };
 
   return (
     <header
@@ -42,7 +63,7 @@ export function PageHeader(props: PageHeaderProps): JSX.Element {
       {breadcrumb?.items != null && breadcrumb.items.length > 0 && (
         <nav
           class="mb-2 text-sm text-slate-500 dark:text-slate-400"
-          aria-label="面包屑"
+          aria-label={m.breadcrumbAriaLabel}
         >
           {breadcrumb.items.map((item, i) => (
             <span key={i}>
@@ -88,7 +109,7 @@ export function PageHeader(props: PageHeaderProps): JSX.Element {
               type="button"
               class="p-1 -ml-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
               onClick={onBack}
-              aria-label="返回"
+              aria-label={m.back}
             >
               <IconArrowLeft class="w-5 h-5" />
             </button>

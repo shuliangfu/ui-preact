@@ -40,7 +40,23 @@ export interface CalendarProps {
   fullscreen?: boolean;
   disabledDate?: (date: Date) => boolean;
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultCalendarMessages} */
+  messages?: Partial<CalendarMessages>;
 }
+
+/** Calendar 内置文案 */
+export interface CalendarMessages {
+  /** 周几文案，长度须为 7（周日为索引 0） */
+  weekdays: readonly string[];
+  /** 月份文案，长度须为 12 */
+  months: readonly string[];
+}
+
+/** 默认中文文案 */
+export const defaultCalendarMessages: CalendarMessages = {
+  weekdays: WEEKDAYS,
+  months: MONTHS,
+};
 
 /**
  * 月视图或年视图日历。
@@ -60,6 +76,11 @@ export function Calendar(props: CalendarProps): JSX.Element {
     disabledDate,
     class: className,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const calMessages: CalendarMessages = {
+    ...defaultCalendarMessages,
+    ...(props.messages ?? {}),
+  };
 
   /** 未传 `value` 时的内部日期 */
   const internalValue = useSignal(new Date());
@@ -142,7 +163,7 @@ export function Calendar(props: CalendarProps): JSX.Element {
     return (
       <div class={twMerge("calendar calendar-year", className)}>
         <div class="grid grid-cols-4 gap-2 p-4">
-          {MONTHS.map((_, i) => {
+          {calMessages.months.map((_, i) => {
             const d = new Date(frame.year, i, 1);
             const curM = frame.month;
             return (
@@ -160,7 +181,7 @@ export function Calendar(props: CalendarProps): JSX.Element {
                   onChange?.(d);
                 }}
               >
-                {monthCellRender ? monthCellRender(d) : MONTHS[i]}
+                {monthCellRender ? monthCellRender(d) : calMessages.months[i]}
               </button>
             );
           })}
@@ -177,7 +198,7 @@ export function Calendar(props: CalendarProps): JSX.Element {
       )}
     >
       <div class="grid grid-cols-7 border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50">
-        {WEEKDAYS.map((w) => (
+        {calMessages.weekdays.map((w) => (
           <div
             key={w}
             class="py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400"
@@ -195,8 +216,8 @@ export function Calendar(props: CalendarProps): JSX.Element {
       >
         {frame.days.map((d, i) => {
           const isLastCol = i % 7 === 6;
-          const m = frame.month;
-          const isCurrentMonth = d.getMonth() === m;
+          const viewMonth = frame.month;
+          const isCurrentMonth = d.getMonth() === viewMonth;
           const highlight = dayCellHighlight(d);
           const disabled = disabledDate?.(d) ?? false;
           return (

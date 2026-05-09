@@ -26,7 +26,20 @@ export interface TagProps {
   rounded?: boolean;
   /** 额外 class */
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultTagMessages} */
+  messages?: Partial<TagMessages>;
 }
+
+/** Tag 内置文案 */
+export interface TagMessages {
+  /** 关闭按钮 `aria-label` */
+  close: string;
+}
+
+/** 默认中文文案 */
+export const defaultTagMessages: TagMessages = {
+  close: "关闭",
+};
 
 const sizeClasses: Record<SizeVariant, string> = {
   xs: "text-xs px-1.5 py-0.5 gap-1",
@@ -69,6 +82,11 @@ export function Tag(props: TagProps): JSX.Element {
     rounded = true,
     class: className,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: TagMessages = {
+    ...defaultTagMessages,
+    ...(props.messages ?? {}),
+  };
 
   const handleClose = (e: Event) => {
     e.stopPropagation();
@@ -94,7 +112,7 @@ export function Tag(props: TagProps): JSX.Element {
           type="button"
           class="shrink-0 ml-0.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
           onClick={handleClose as (e: Event) => void}
-          aria-label="关闭"
+          aria-label={m.close}
         >
           <span class="text-current leading-none" aria-hidden>
             ×

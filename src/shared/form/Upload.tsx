@@ -78,7 +78,50 @@ export interface UploadCoreProps {
     response?: Response;
   }) => void;
   onUploadError?: (err: Error, file: File) => void;
+  /** 多语言/自定义文案；未传字段走 {@link defaultUploadMessages} */
+  messages?: Partial<UploadMessages>;
 }
+
+/** Upload 内置文案 */
+export interface UploadMessages {
+  /** 拖拽区占位文案默认值；与 {@link UploadCoreProps.dragPlaceholder} 同义，后者优先 */
+  dragPlaceholder: string;
+  /** 非拖拽触发条文案默认值；与 {@link UploadCoreProps.triggerLabel} 同义，后者优先 */
+  triggerLabel: string;
+  /** 列表项「等待上传」状态 `aria-label` */
+  pending: string;
+  /** 列表项「已完成」状态 `aria-label` */
+  done: string;
+  /** 列表项「上传失败」状态 `aria-label` */
+  error: string;
+  /** 失败行的「重试」按钮文案 */
+  retry: string;
+  /** 「取消或移除 X」按钮 `aria-label`，参数为文件名 */
+  cancelOrRemove: (name: string) => string;
+  /** 「移除 X」按钮 `aria-label`，参数为文件名 */
+  remove: (name: string) => string;
+  /** 文件类型不在 accept 范围内的错误提示 */
+  errAcceptType: string;
+  /** 单文件超大错误提示，参数为人类可读的最大尺寸（如 `2 MB`） */
+  errFileTooLarge: (max: string) => string;
+  /** 多文件超过最大数量错误提示，参数为最大数量 */
+  errMaxCount: (max: number) => string;
+}
+
+/** 默认中文文案 */
+export const defaultUploadMessages: UploadMessages = {
+  dragPlaceholder: "点击或拖拽文件到此处",
+  triggerLabel: "选择文件",
+  pending: "等待上传",
+  done: "已完成",
+  error: "上传失败",
+  retry: "重试",
+  cancelOrRemove: (name) => `取消或移除 ${name}`,
+  remove: (name) => `移除 ${name}`,
+  errAcceptType: "文件类型不在 accept 允许范围内",
+  errFileTooLarge: (max) => `文件超过大小限制（最大 ${max}）`,
+  errMaxCount: (max) => `最多只能选择 ${max} 个文件`,
+};
 
 export type UploadProps =
   & UploadCoreProps
@@ -179,9 +222,7 @@ export function Upload(props: UploadProps): JSX.Element {
     accept,
     disabled = false,
     drag = true,
-    dragPlaceholder = "点击或拖拽文件到此处",
     showTriggerIcon = true,
-    triggerLabel = "选择文件",
     hideFocusRing = false,
     preview = false,
     class: className,
@@ -205,7 +246,13 @@ export function Upload(props: UploadProps): JSX.Element {
     onValueChange,
     onUploadSuccess,
     onUploadError,
+    messages,
   } = props;
+
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultUploadMessages, ...messages };
+  const dragPlaceholder = props.dragPlaceholder ?? m.dragPlaceholder;
+  const triggerLabel = props.triggerLabel ?? m.triggerLabel;
 
   const storageKey = resolveUploadStorageKey(id, name);
   const anonRef = useRef<UploadRuntimeState | null>(null);
@@ -364,18 +411,18 @@ export function Upload(props: UploadProps): JSX.Element {
     }
     for (const file of raw) {
       if (!fileMatchesAccept(file, accept)) {
-        pushErrorItem(file, "文件类型不在 accept 允许范围内");
+        pushErrorItem(file, m.errAcceptType);
         continue;
       }
       if (maxFileSize != null && file.size > maxFileSize) {
         pushErrorItem(
           file,
-          `文件超过大小限制（最大 ${formatUploadFileSize(maxFileSize)}）`,
+          m.errFileTooLarge(formatUploadFileSize(maxFileSize)),
         );
         continue;
       }
       if (multiple && maxCount != null && items.value.length >= maxCount) {
-        pushErrorItem(file, `最多只能选择 ${maxCount} 个文件`);
+        pushErrorItem(file, m.errMaxCount(maxCount));
         break;
       }
       const uid = newUploadUid();
@@ -579,7 +626,7 @@ export function Upload(props: UploadProps): JSX.Element {
               {file.status === "pending" && (
                 <span
                   class="shrink-0 text-xs text-slate-400 dark:text-slate-500"
-                  aria-label="等待上传"
+                  aria-label={m.pending}
                 >
                   …
                 </span>
@@ -592,7 +639,7 @@ export function Upload(props: UploadProps): JSX.Element {
               {file.status === "done" && (
                 <span
                   class="shrink-0 text-xs font-medium text-emerald-600 dark:text-emerald-400"
-                  aria-label="已完成"
+                  aria-label={m.done}
                 >
                   OK
                 </span>
@@ -601,7 +648,7 @@ export function Upload(props: UploadProps): JSX.Element {
                 <span
                   class="shrink-0 text-xs font-medium text-red-600 dark:text-red-400"
                   title={file.errorMessage}
-                  aria-label="上传失败"
+                  aria-label={m.error}
                 >
                   !
                 </span>
@@ -613,15 +660,15 @@ export function Upload(props: UploadProps): JSX.Element {
                   disabled={disabled}
                   onClick={() => handleRetryByUid(file.uid)}
                 >
-                  重试
+                  {m.retry}
                 </button>
               )}
               <button
                 type="button"
-                class="shrink-0 p-0.5 rounded text-slate-400 hover:text-red-600 dark:hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                class="shrink-0 p-0.5 rounded text-slate-400 hover:text-red-600 dark:hover:text-red-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 aria-label={file.status === "uploading"
-                  ? `取消或移除 ${file.name}`
-                  : `移除 ${file.name}`}
+                  ? m.cancelOrRemove(file.name)
+                  : m.remove(file.name)}
                 disabled={disabled}
                 onClick={() => handleRemoveByUid(file.uid)}
               >

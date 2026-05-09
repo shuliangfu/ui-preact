@@ -82,7 +82,7 @@ function NotificationItemEl({ item }: { item: NotificationItem }) {
       </div>
       <button
         type="button"
-        aria-label="关闭"
+        aria-label={item.closeAriaLabel ?? "关闭"}
         class="shrink-0 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
         data-notification-close=""
         data-notification-id={item.id}

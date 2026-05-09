@@ -25,6 +25,7 @@ import {
   nativeSelectSurface,
   pickerTriggerSurface,
 } from "./input-focus-ring.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import {
   commitMaybeSignal,
   type MaybeSignal,
@@ -59,6 +60,26 @@ export interface CascaderOption {
 /** 级联展示形态：`dropdown` 多列浮层；`native` 两级内双原生 select（无 `loadChildren`） */
 export type CascaderAppearance = "dropdown" | "native";
 
+/** Cascader 内置文案 */
+export interface CascaderMessages {
+  placeholder: string;
+  triggerFallback: string;
+  dialog: string;
+  loading: string;
+  emptyFirst: string;
+  emptyChild: string;
+}
+
+/** 默认中文文案 */
+export const defaultCascaderMessages: CascaderMessages = {
+  placeholder: "请选择",
+  triggerFallback: "级联选择",
+  dialog: "级联选择",
+  loading: "加载中…",
+  emptyFirst: "暂无选项",
+  emptyChild: "无下级选项",
+};
+
 export interface CascaderProps {
   /**
    * 静态树：根数组即第一列（可为省、市、类目一级等任意语义）；子级用 `children` 嵌套，二级或 N 级同一套结构。
@@ -91,6 +112,8 @@ export interface CascaderProps {
    * 否则自动使用 `dropdown` 浮层（与桌面一致）。
    */
   appearance?: CascaderAppearance;
+  /** 多语言/自定义文案；未传字段走 {@link defaultCascaderMessages} */
+  messages?: Partial<CascaderMessages>;
 }
 
 const sizeClasses: Record<SizeVariant, string> = {
@@ -133,16 +156,20 @@ function CascaderNativeTwoLevel(props: CascaderProps): JSX.Element {
   const {
     options,
     value: valueProp,
-    size = "md",
+    size: sizeProp,
     disabled = false,
     onChange,
-    placeholder = "请选择",
     class: className,
     name,
     id,
     hideFocusRing = false,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const msg = { ...defaultCascaderMessages, ...messages };
+  const placeholder = props.placeholder ?? msg.placeholder;
   const value = readMaybeSignal(valueProp) ?? [];
+  const size = resolveFormControlSize(sizeProp);
   const sizeCls = sizeClassesNative[size];
 
   /**
@@ -535,16 +562,20 @@ function CascaderDropdownPanel(props: CascaderProps): JSX.Element {
     options: rootOptions,
     loadChildren,
     onLoadError,
-    size = "md",
+    size: sizeProp,
     disabled = false,
     onChange,
-    placeholder = "请选择",
     class: className,
     name,
     id,
     hideFocusRing = false,
     value,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const msg = { ...defaultCascaderMessages, ...messages };
+  const placeholder = props.placeholder ?? msg.placeholder;
+  const size = resolveFormControlSize(sizeProp);
 
   const openState = useSignal(false);
   /** 组件根 DOM（触发条 + 内联 absolute 浮层），供「点外部」与 `elementsFromPoint` 兜底 */
@@ -850,7 +881,7 @@ function CascaderDropdownPanel(props: CascaderProps): JSX.Element {
     return (
       <div class="flex min-h-0 min-w-0 max-w-full flex-col">
         {/* 列区域：不用 `display:contents`，避免个别环境下命中/包含与关外部判断异常 */}
-        <div class="grid max-h-72 w-max min-w-0 max-w-full grid-flow-col overflow-x-auto [grid-auto-columns:minmax(10rem,max-content)]">
+        <div class="grid max-h-72 w-max min-w-0 max-w-full grid-flow-col overflow-x-auto auto-cols-[minmax(10rem,max-content)]">
           {columns.map((col, colIdx) => (
             <div
               key={col.colIndex}
@@ -879,13 +910,13 @@ function CascaderDropdownPanel(props: CascaderProps): JSX.Element {
               {col.showLoading
                 ? (
                   <div class="px-3 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                    加载中…
+                    {msg.loading}
                   </div>
                 )
                 : col.items.length === 0
                 ? (
                   <div class="px-3 py-6 text-center text-xs text-slate-400 dark:text-slate-500">
-                    {col.colIndex === 0 ? "暂无选项" : "无下级选项"}
+                    {col.colIndex === 0 ? msg.emptyFirst : msg.emptyChild}
                   </div>
                 )
                 : (
@@ -913,7 +944,7 @@ function CascaderDropdownPanel(props: CascaderProps): JSX.Element {
   /** 触发条展示文案（与受控 value、懒加载缓存一致） */
   const triggerView = getTriggerView();
   const ariaLabelCascader = triggerView.displayText || placeholder ||
-    "级联选择";
+    msg.triggerFallback;
 
   return (
     <div
@@ -925,7 +956,7 @@ function CascaderDropdownPanel(props: CascaderProps): JSX.Element {
       class={twMerge(
         /** `overflow-visible`：减轻 flex 祖先裁切多列浮层；展开时抬高以压过后序兄弟块 */
         "relative inline-block w-full min-w-0 overflow-visible",
-        openState.value && "z-[1000]",
+        openState.value && "z-1000",
         className,
       )}
     >
@@ -976,7 +1007,7 @@ function CascaderDropdownPanel(props: CascaderProps): JSX.Element {
       {openState.value && (
         <div
           role="dialog"
-          aria-label="级联选择"
+          aria-label={msg.dialog}
           data-ui-cascader-panel=""
           class={twMerge(
             "absolute z-50 top-full left-0 mt-1 w-max max-h-72 min-w-0 max-w-[min(100vw-1rem,520px)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800",

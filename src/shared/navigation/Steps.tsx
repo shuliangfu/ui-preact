@@ -22,7 +22,20 @@ export interface StepsProps {
   direction?: "horizontal" | "vertical";
   onChange?: (current: number) => void;
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultStepsMessages} */
+  messages?: Partial<StepsMessages>;
 }
+
+/** Steps 内置文案 */
+export interface StepsMessages {
+  /** 列表 `aria-label` */
+  ariaLabel: string;
+}
+
+/** 默认中文文案 */
+export const defaultStepsMessages: StepsMessages = {
+  ariaLabel: "步骤",
+};
 
 function getStatus(
   index: number,
@@ -62,6 +75,11 @@ export function Steps(props: StepsProps): JSX.Element {
     onChange,
     class: className,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: StepsMessages = {
+    ...defaultStepsMessages,
+    ...(props.messages ?? {}),
+  };
 
   const currentVal = readStepsCurrent(props.current);
 
@@ -73,7 +91,7 @@ export function Steps(props: StepsProps): JSX.Element {
         className,
       )}
       role="list"
-      aria-label="步骤"
+      aria-label={m.ariaLabel}
     >
       {items.map((item, index) => {
         const status = getStatus(

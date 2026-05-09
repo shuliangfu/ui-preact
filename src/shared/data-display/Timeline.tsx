@@ -82,7 +82,7 @@ export function Timeline(props: TimelineProps): JSX.Element {
         const isPending = item.pending ?? (listPending && isLast);
         const color = item.color ?? "primary";
         const dotCls = twMerge(
-          "shrink-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 shadow relative z-[1]",
+          "shrink-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 shadow relative z-1",
           isPending ? "bg-slate-200 dark:bg-slate-600" : colorClasses[color],
         );
         const textAlignRight = mode === "right" ||

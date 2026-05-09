@@ -8,6 +8,7 @@ import type { ComponentChildren, JSX } from "preact";
 import { useContext } from "preact/hooks";
 import { twMerge } from "tailwind-merge";
 import type { ColorVariant, SizeVariant } from "../types.ts";
+import { resolveFormControlSize } from "../form/form-control-context.ts";
 import {
   BUTTON_GROUP_CHILD_BASE,
   BUTTON_SIZE_CLASSES,
@@ -84,7 +85,7 @@ export function Button(props: ButtonProps): JSX.Element {
   const {
     itemKey,
     variant = "primary",
-    size = "md",
+    size: sizeProp,
     disabled = false,
     loading = false,
     type = "button",
@@ -94,6 +95,8 @@ export function Button(props: ButtonProps): JSX.Element {
   } = props;
 
   const { attached: inAttachedGroup } = useContext(ButtonGroupContext);
+  /** Form 未传 `size` 时继承容器注入的尺寸 */
+  const size = resolveFormControlSize(sizeProp);
 
   /** 默认带蓝色焦点环；在紧凑组内去掉 ring，改由 variant 的 focus/active 背景提示 */
   const base = inAttachedGroup

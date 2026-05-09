@@ -9,7 +9,7 @@
 
 /**
  * Tailwind CSS **v4**：`z-*` 对任意整数会生成工具类，**写 `z-1070` 即 `z-index:1070`**。
- * v3 未扩展 theme 时 `z-1070` 可能不生成，常用 `z-[1070]`；v4 不必强制方括号（见官方讨论如 tailwindlabs/tailwindcss#18951）。
+ * v4 任意整数档可直接写 `z-1070`（不必 `z-[1070]`）；与编辑器 Tailwind 提示一致。
  */
 export const pickerPortalZClass = "z-1070";
 

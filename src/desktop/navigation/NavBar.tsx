@@ -46,7 +46,20 @@ export interface NavBarProps {
   class?: string;
   /** 内层容器额外 class（应用在 Container 内的 flex 容器上） */
   containerClass?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultDesktopNavBarMessages} */
+  messages?: Partial<DesktopNavBarMessages>;
 }
+
+/** 桌面 NavBar 内置文案 */
+export interface DesktopNavBarMessages {
+  /** 主导航 `nav` 的 `aria-label` */
+  navAriaLabel: string;
+}
+
+/** 默认中文文案 */
+export const defaultDesktopNavBarMessages: DesktopNavBarMessages = {
+  navAriaLabel: "主导航",
+};
 
 const defaultHeaderClass =
   "z-50 border-slate-200 bg-white/98 dark:border-slate-700/80 dark:bg-slate-900/98 shadow-sm shadow-slate-200/50 dark:shadow-slate-950/50 backdrop-blur-md";
@@ -75,6 +88,11 @@ export function NavBar(props: NavBarProps): JSX.Element {
     class: className,
     containerClass,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: DesktopNavBarMessages = {
+    ...defaultDesktopNavBarMessages,
+    ...(props.messages ?? {}),
+  };
 
   const menuJustifyClass = menuAlign === "center"
     ? "justify-center"
@@ -96,10 +114,10 @@ export function NavBar(props: NavBarProps): JSX.Element {
     <header class={headerClass} role="banner">
       <Container maxWidth={containerMaxWidth} class={innerClass}>
         {start != null && (
-          <div class="relative z-[2] flex shrink-0 items-center">{start}</div>
+          <div class="relative z-2 flex shrink-0 items-center">{start}</div>
         )}
         {center != null && (
-          <div class="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-[1] md:hidden">
+          <div class="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-1 md:hidden">
             <div
               class={twMerge(
                 "pointer-events-auto absolute left-1/2 top-1/2",
@@ -124,13 +142,13 @@ export function NavBar(props: NavBarProps): JSX.Element {
               "flex flex-1 min-w-0 items-center gap-1",
               menuJustifyClass,
             )}
-            aria-label="主导航"
+            aria-label={m.navAriaLabel}
           >
             {nav}
           </nav>
         )}
         {end != null && (
-          <div class="relative z-[2] flex shrink-0 items-center gap-1">
+          <div class="relative z-2 flex shrink-0 items-center gap-1">
             {end}
           </div>
         )}

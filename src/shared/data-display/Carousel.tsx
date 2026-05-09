@@ -452,7 +452,23 @@ export interface CarouselProps {
    * 默认 false，保证所有 slide 均能正常显示；设为 true 可省内存但依赖 patch 替换占位，部分环境下第 2/3 张可能不显示。
    */
   lazySlides?: boolean;
+  /** 多语言/自定义文案；未传字段走 {@link defaultCarouselMessages} */
+  messages?: Partial<CarouselMessages>;
 }
+
+/** Carousel 内置文案 */
+export interface CarouselMessages {
+  /** 上一张按钮 `aria-label` */
+  prev: string;
+  /** 下一张按钮 `aria-label` */
+  next: string;
+}
+
+/** 默认中文文案 */
+export const defaultCarouselMessages: CarouselMessages = {
+  prev: "上一张",
+  next: "下一张",
+};
 
 /**
  * 计算到「下一 `period` 毫秒墙钟边界」的延时，用于自动播链式 `setTimeout` 的**下一次**调度。
@@ -619,6 +635,11 @@ function carouselDotsActiveSlideIndex(
 }
 
 export function Carousel(props: CarouselProps): JSX.Element {
+  /** 合并默认中文文案与外部传入 messages */
+  const m: CarouselMessages = {
+    ...defaultCarouselMessages,
+    ...(props.messages ?? {}),
+  };
   /** 非受控（未传 `current`）时的内部当前页；须 {@link useSignal}，勿用每次渲染新建的 `signal()`。 */
   const internalIndexRef = useSignal(0);
   /**
@@ -1845,9 +1866,9 @@ export function Carousel(props: CarouselProps): JSX.Element {
 
     const stackedZClass = (i: number, curIdx: number, under: number | null) =>
       i === curIdx
-        ? "z-[3]"
+        ? "z-3"
         : under !== null && i === under
-        ? "z-[2]"
+        ? "z-2"
         : "z-0 pointer-events-none";
 
     const slideChildSlideModeClass = twMerge(
@@ -2593,7 +2614,7 @@ export function Carousel(props: CarouselProps): JSX.Element {
                 resetAutoplay();
                 goRef.current(-1);
               }}
-              aria-label="上一张"
+              aria-label={m.prev}
             >
               <IconChevronLeft class="w-5 h-5" />
             </button>
@@ -2609,7 +2630,7 @@ export function Carousel(props: CarouselProps): JSX.Element {
                 resetAutoplay();
                 goRef.current(1);
               }}
-              aria-label="下一张"
+              aria-label={m.next}
             >
               <IconChevronRight class="w-5 h-5" />
             </button>
@@ -2636,7 +2657,7 @@ export function Carousel(props: CarouselProps): JSX.Element {
               resetAutoplay();
               goRef.current(-1);
             }}
-            aria-label="上一张"
+            aria-label={m.prev}
           >
             <IconChevronLeft class="w-5 h-5" />
           </button>
@@ -2652,7 +2673,7 @@ export function Carousel(props: CarouselProps): JSX.Element {
               resetAutoplay();
               goRef.current(1);
             }}
-            aria-label="下一张"
+            aria-label={m.next}
           >
             <IconChevronRight class="w-5 h-5" />
           </button>

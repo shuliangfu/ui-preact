@@ -1,7 +1,7 @@
 /**
  * 与 `ui-view/src/shared/form/input-autofill-classes.ts` 保持内容一致；改一处请双端同步。
  *
- * 浏览器自动填充（尤其 Chrome `:-webkit-autofill`）会强改输入框背景，需 inset 大阴影 + 字色 + 固定 `border-color` 与 `outline-none`。
+ * 浏览器自动填充（尤其 Chrome `:-webkit-autofill`）会强改输入框背景，需 inset 大阴影 + 字色 + 固定 `border-color` 与 `outline-hidden`。
  * 由 `Input` / `Password` 共用；勿用 `dark:!` + 复合 ` [&:-webkit-autofill]` 任意类（见 Tailwind v4 不产出 CSS 的风险）。
  * 精减为 4 组变体（无 :hover/:active 重复）+ outline；`:-webkit-autofill:focus` / `:autofill:focus` 用于「已填充且聚焦」的 UA 样式。
  *
@@ -32,10 +32,10 @@ const AUTOFILL_CLASS_PARTS: readonly string[] = [
   "dark:[&:autofill:focus]:[box-shadow:0_0_0_1000px_rgb(30_41_59)_inset]",
   "[&:autofill:focus]:[border-color:rgb(203_213_225)]",
   "dark:[&:autofill:focus]:[border-color:rgb(71_85_105)]",
-  "[&:-webkit-autofill]:outline-none",
-  "[&:-webkit-autofill:focus]:outline-none",
-  "[&:autofill]:outline-none",
-  "[&:autofill:focus]:outline-none",
+  "[&:-webkit-autofill]:outline-hidden",
+  "[&:-webkit-autofill:focus]:outline-hidden",
+  "[&:autofill]:outline-hidden",
+  "[&:autofill:focus]:outline-hidden",
 ];
 
 export const inputAutofillOverride = AUTOFILL_CLASS_PARTS.join(" ");

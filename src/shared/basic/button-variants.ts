@@ -50,8 +50,8 @@ export const BUTTON_VARIANT_GROUP_FOCUS_ACTIVE: Record<ColorVariant, string> = {
 
 /** 独立按钮 / 链接按钮的交互基底（非组内） */
 export const BUTTON_STANDALONE_INTERACTIVE_BASE =
-  "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none disabled:cursor-not-allowed";
 
 /** ButtonGroup 内子按钮基底（无 ring） */
 export const BUTTON_GROUP_CHILD_BASE =
-  "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center font-medium transition-colors focus:outline-hidden focus:ring-0 focus:ring-offset-0 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none disabled:cursor-not-allowed";

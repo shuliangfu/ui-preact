@@ -21,6 +21,7 @@ import {
   yearGridPageStart,
 } from "../data-display/calendar-utils.ts";
 import type { SizeVariant } from "../types.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import {
   controlBlueFocusRing,
   pickerTriggerSizeClasses,
@@ -29,6 +30,7 @@ import {
 import {
   type PickerCalendarHeaderPanel,
   PickerCalendarNav,
+  type PickerCalendarNavMessages,
 } from "./picker-calendar-nav.tsx";
 import {
   DEFAULT_DATETIME_FORMAT,
@@ -72,6 +74,76 @@ export type DateTimePickerMode = "single" | "range" | "multiple";
 /** 受控值形态（由 {@link DateTimePickerProps.mode} 决定） */
 export type DateTimePickerValue = string | DateTimePickerRangeValue | string[];
 
+/**
+ * DateTimePicker 内置文案；通过 {@link DateTimePickerProps.messages} 覆盖即可本地化。
+ */
+export interface DateTimePickerMessages {
+  /** 触发器空值占位（与 {@link DateTimePickerProps.placeholder} 同义；后者优先） */
+  placeholder: string;
+  /** 浮层 `aria-label` */
+  dialog: string;
+  /** 「确定」按钮 */
+  confirm: string;
+  /** 「取消」按钮 */
+  cancel: string;
+  /** range 模式空值占位 */
+  rangePlaceholder: string;
+  /** multiple 模式合并展示（>2 项） */
+  multipleSummary: (count: number) => string;
+  /** 列头：时 */
+  hour: string;
+  /** 列头：分 */
+  minute: string;
+  /** 列头：秒 */
+  second: string;
+  /** range 模式「开始」槽位 tab 默认文案（无值） */
+  start: string;
+  /** range 模式「结束」槽位 tab 默认文案（无值） */
+  end: string;
+  /** range 模式「开始」槽位 tab 含已选值时的拼接 */
+  startWithValue: (value: string) => string;
+  /** range 模式「结束」槽位 tab 含已选值时的拼接 */
+  endWithValue: (value: string) => string;
+  /** 嵌套传入 {@link PickerCalendarNav} 的本地化文案 */
+  calendarNav: Partial<PickerCalendarNavMessages>;
+}
+
+/** 默认中文文案（含 `dialog`，供 Table 等探测 `[role="dialog"]` 使用） */
+export const defaultDateTimePickerMessages: DateTimePickerMessages = {
+  placeholder: "请选择日期时间",
+  dialog: "选择日期与时间",
+  confirm: "确定",
+  cancel: "取消",
+  rangePlaceholder: "…",
+  multipleSummary: (count) => `${count} 个日期时间`,
+  hour: "时",
+  minute: "分",
+  second: "秒",
+  start: "开始",
+  end: "结束",
+  startWithValue: (v) => `开始 · ${v}`,
+  endWithValue: (v) => `结束 · ${v}`,
+  calendarNav: {},
+};
+
+/**
+ * 合并默认与外部 messages，`calendarNav` 做浅合并。
+ *
+ * @param partial - 外部传入的部分文案
+ */
+function mergeDateTimePickerMessages(
+  partial?: Partial<DateTimePickerMessages>,
+): DateTimePickerMessages {
+  return {
+    ...defaultDateTimePickerMessages,
+    ...partial,
+    calendarNav: {
+      ...defaultDateTimePickerMessages.calendarNav,
+      ...(partial?.calendarNav ?? {}),
+    },
+  };
+}
+
 export interface DateTimePickerProps {
   mode?: DateTimePickerMode;
   /** 见 {@link MaybeSignal} */
@@ -99,6 +171,8 @@ export interface DateTimePickerProps {
    * 浮层挂载方式：`anchored`（默认）相对根 `absolute`；`viewport` 为视口 `fixed` + 几何同步，避免被表格等 overflow 裁切。
    */
   panelAttach?: "anchored" | "viewport";
+  /** 多语言/自定义文案；未传字段走 {@link defaultDateTimePickerMessages} */
+  messages?: Partial<DateTimePickerMessages>;
 }
 
 const DROPDOWN_ESC_KEY = "__lastDropdownClose" as const;
@@ -232,6 +306,7 @@ function dateTimePickerDisplayText(
   mode: DateTimePickerMode,
   raw: unknown,
   placeholder: string,
+  messages: DateTimePickerMessages,
 ): string {
   if (mode === "single") {
     const s = typeof raw === "string" ? raw : "";
@@ -242,12 +317,13 @@ function dateTimePickerDisplayText(
     const st = o.start?.trim() ?? "";
     const en = o.end?.trim() ?? "";
     if (st === "" && en === "") return placeholder;
-    return `${st || "…"} ~ ${en || "…"}`;
+    const ph = messages.rangePlaceholder;
+    return `${st || ph} ~ ${en || ph}`;
   }
   const arr = isDateTimeStringArray(raw) ? raw : [];
   if (arr.length === 0) return placeholder;
   if (arr.length <= 2) return arr.join("、");
-  return `${arr.length} 个日期时间`;
+  return messages.multipleSummary(arr.length);
 }
 
 /**
@@ -326,6 +402,8 @@ interface DateTimePickerTimeStripProps {
   draftEndHour: Signal<number>;
   draftEndMinute: Signal<number>;
   draftEndSecond: Signal<number>;
+  /** 列头标签：时 / 分 / 秒；由父级合并 messages 后传入 */
+  labels: { hour: string; minute: string; second: string };
 }
 
 /**
@@ -348,6 +426,7 @@ function DateTimePickerTimeStrip(
     draftEndHour,
     draftEndMinute,
     draftEndSecond,
+    labels,
   } = props;
 
   const tg = dtFormatSpec.timeGranularity;
@@ -550,7 +629,7 @@ function DateTimePickerTimeStrip(
             {showHourCol && (
               <div class={timeColWrapClass}>
                 <div class="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1 text-center border-b border-slate-200 dark:border-slate-600">
-                  时
+                  {labels.hour}
                 </div>
                 <div
                   class={timeColListClass}
@@ -591,7 +670,7 @@ function DateTimePickerTimeStrip(
             {showMinuteCol && (
               <div class={timeColWrapClass}>
                 <div class="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1 text-center border-b border-slate-200 dark:border-slate-600">
-                  分
+                  {labels.minute}
                 </div>
                 <div
                   class={timeColListClass}
@@ -632,7 +711,7 @@ function DateTimePickerTimeStrip(
             {showSecondCol && (
               <div class={timeColWrapClass}>
                 <div class="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1 text-center border-b border-slate-200 dark:border-slate-600">
-                  秒
+                  {labels.second}
                 </div>
                 <div
                   class={timeColListClass}
@@ -713,6 +792,8 @@ function DateTimePickerOverlay(p: {
   useViewportPanel: boolean;
   showSecondCol: boolean;
   rangeTabCls: (active: boolean) => string;
+  /** 合并后的用户文案 */
+  messages: DateTimePickerMessages;
 }): JSX.Element {
   const {
     props,
@@ -747,7 +828,14 @@ function DateTimePickerOverlay(p: {
     useViewportPanel,
     showSecondCol,
     rangeTabCls,
+    messages,
   } = p;
+
+  const timeStripLabels = {
+    hour: messages.hour,
+    minute: messages.minute,
+    second: messages.second,
+  };
 
   const { mode, dtFormatSpec, minDate, maxDate, disabledDate } =
     getDateTimePickerDerivatives(props);
@@ -767,7 +855,7 @@ function DateTimePickerOverlay(p: {
   return (
     <div
       role="dialog"
-      aria-label="选择日期与时间"
+      aria-label={messages.dialog}
       class={twMerge(
         "pointer-events-auto box-border w-max min-w-[288px] overflow-hidden p-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg",
         showSecondCol
@@ -812,16 +900,16 @@ function DateTimePickerOverlay(p: {
             }}
           >
             {draftStartDay.value != null
-              ? `开始 · ${
+              ? messages.startWithValue(
                 formatDateTimeWithSpec(
                   draftStartDay.value,
                   draftStartHour.value,
                   draftStartMinute.value,
                   draftStartSecond.value,
                   dtFormatSpec,
-                )
-              }`
-              : "开始"}
+                ),
+              )
+              : messages.start}
           </button>
           <button
             type="button"
@@ -835,16 +923,16 @@ function DateTimePickerOverlay(p: {
             }}
           >
             {draftEndDay.value != null
-              ? `结束 · ${
+              ? messages.endWithValue(
                 formatDateTimeWithSpec(
                   draftEndDay.value,
                   draftEndHour.value,
                   draftEndMinute.value,
                   draftEndSecond.value,
                   dtFormatSpec,
-                )
-              }`
-              : "结束"}
+                ),
+              )
+              : messages.end}
           </button>
         </div>
       )}
@@ -881,6 +969,7 @@ function DateTimePickerOverlay(p: {
               } else onSelectMultipleDay(d);
             }}
             disabledDate={disabledDate}
+            messages={messages.calendarNav}
           />
         </div>
         <DateTimePickerTimeStrip
@@ -896,6 +985,7 @@ function DateTimePickerOverlay(p: {
           draftEndHour={draftEndHour}
           draftEndMinute={draftEndMinute}
           draftEndSecond={draftEndSecond}
+          labels={timeStripLabels}
         />
       </div>
       <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
@@ -905,14 +995,14 @@ function DateTimePickerOverlay(p: {
           class={confirmClass}
           onClick={handleConfirm}
         >
-          确定
+          {messages.confirm}
         </button>
         <button
           type="button"
           class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
           onClick={handleCancel}
         >
-          取消
+          {messages.cancel}
         </button>
       </div>
     </div>
@@ -923,6 +1013,11 @@ function DateTimePickerOverlay(p: {
  * DateTimePicker：日期时间选择器。
  */
 export function DateTimePicker(props: DateTimePickerProps): JSX.Element {
+  /** 合并默认中文文案与外部传入 messages */
+  const m = mergeDateTimePickerMessages(props.messages);
+
+  /** 与 {@link Input} 一致：继承 Form 注入的控件尺寸 */
+  const resolvedControlSize = resolveFormControlSize(props.size);
   const openState = useSignal(false);
   const draftDay = useSignal<Date | null>(null);
   const draftHour = useSignal(0);
@@ -1286,17 +1381,21 @@ export function DateTimePicker(props: DateTimePickerProps): JSX.Element {
   const { mode, dtFormatSpec } = derivatives;
   const rawCommitted = resolveDateTimePickerRaw(props.value);
   const hiddenVal = dateTimePickerHiddenSerialized(mode, rawCommitted);
-  const placeholder = props.placeholder ?? "请选择日期时间";
+  const placeholder = props.placeholder ?? m.placeholder;
   const rawDisplay = rawForTriggerDisplay();
-  const displayText = dateTimePickerDisplayText(mode, rawDisplay, placeholder);
+  const displayText = dateTimePickerDisplayText(
+    mode,
+    rawDisplay,
+    placeholder,
+    m,
+  );
   const hasVal = dateTimePickerHasValue(mode, rawDisplay);
-  const size = props.size ?? "md";
   const triggerBtnClass = twMerge(
     pickerTriggerSurface,
     controlBlueFocusRing(!props.hideFocusRing),
-    pickerTriggerSizeClasses[size],
+    pickerTriggerSizeClasses[resolvedControlSize],
   );
-  const iconProps = pickerCalendarIconProps(size);
+  const iconProps = pickerCalendarIconProps(resolvedControlSize);
   const rootClass = twMerge("relative inline-block", props.class);
   const useViewportPanel = (props.panelAttach ?? "anchored") === "viewport";
   const showSecondCol = dtFormatSpec.timeGranularity === "second" ||
@@ -1405,6 +1504,7 @@ export function DateTimePicker(props: DateTimePickerProps): JSX.Element {
           useViewportPanel={useViewportPanel}
           showSecondCol={showSecondCol}
           rangeTabCls={rangeTabCls}
+          messages={m}
         />
       )}
     </div>

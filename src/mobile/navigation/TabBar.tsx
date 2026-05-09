@@ -37,7 +37,20 @@ export interface TabBarProps {
   safeAreaInsetBottom?: boolean;
   /** 额外 class */
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultTabBarMessages} */
+  messages?: Partial<TabBarMessages>;
 }
+
+/** TabBar 内置文案 */
+export interface TabBarMessages {
+  /** `nav` `aria-label` */
+  navAriaLabel: string;
+}
+
+/** 默认中文文案 */
+export const defaultTabBarMessages: TabBarMessages = {
+  navAriaLabel: "底部导航",
+};
 
 /**
  * 底部 Tab 导航：高亮随受控 `activeKey` 更新（含 Signal）。
@@ -53,6 +66,11 @@ export function TabBar(props: TabBarProps): JSX.Element {
     safeAreaInsetBottom = true,
     class: className,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: TabBarMessages = {
+    ...defaultTabBarMessages,
+    ...(props.messages ?? {}),
+  };
 
   /** 每帧解析受控 key，保证 Hybrid 下切换能刷新高亮 */
   const activeKeyResolved = readControlledStringInput(props.activeKey) ?? "";
@@ -67,7 +85,7 @@ export function TabBar(props: TabBarProps): JSX.Element {
         className,
       )}
       role="tablist"
-      aria-label="底部导航"
+      aria-label={m.navAriaLabel}
     >
       {items.map((item) => {
         const selected = activeKeyResolved === item.key;

@@ -22,7 +22,20 @@ export interface AlertProps {
   action?: ComponentChildren;
   class?: string;
   children?: ComponentChildren;
+  /** 多语言/自定义文案；未传字段走 {@link defaultAlertMessages} */
+  messages?: Partial<AlertMessages>;
 }
+
+/** Alert 内置文案 */
+export interface AlertMessages {
+  /** 关闭按钮 `aria-label` */
+  close: string;
+}
+
+/** 默认中文文案 */
+export const defaultAlertMessages: AlertMessages = {
+  close: "关闭",
+};
 
 const typeIconMap = {
   success: IconCheckCircle,
@@ -65,6 +78,11 @@ export function Alert(props: AlertProps): JSX.Element {
     class: className,
     children,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: AlertMessages = {
+    ...defaultAlertMessages,
+    ...(props.messages ?? {}),
+  };
 
   const IconComponent = typeIconMap[type];
   const iconCls = typeIconClasses[type];
@@ -94,7 +112,7 @@ export function Alert(props: AlertProps): JSX.Element {
       {closable && (
         <button
           type="button"
-          aria-label="关闭"
+          aria-label={m.close}
           class="shrink-0 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 opacity-70 hover:opacity-100"
           onClick={() => onClose?.()}
         >

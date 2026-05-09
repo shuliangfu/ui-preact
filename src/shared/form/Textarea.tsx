@@ -16,6 +16,19 @@ import {
   readMaybeSignal,
 } from "./maybe-signal.ts";
 
+/**
+ * Textarea 内置文案。
+ */
+export interface TextareaMessages {
+  /** 字数提示文本，参数为剩余字符数与上限 */
+  remaining: (remaining: number, maxLength: number) => string;
+}
+
+/** 默认中文文案 */
+export const defaultTextareaMessages: TextareaMessages = {
+  remaining: (remaining, maxLength) => `剩余 ${remaining} / ${maxLength}`,
+};
+
 export interface TextareaProps {
   /** 是否禁用 */
   disabled?: boolean;
@@ -57,11 +70,13 @@ export interface TextareaProps {
   name?: string;
   /** 原生 id */
   id?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultTextareaMessages} */
+  messages?: Partial<TextareaMessages>;
 }
 
 /** 基础底纹（不含 ring） */
 const textareaSurface =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y min-h-[80px]";
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y min-h-[80px]";
 const readOnlyCls = "bg-slate-50 dark:bg-slate-800/80 cursor-default";
 
 /**
@@ -70,8 +85,9 @@ const readOnlyCls = "bg-slate-50 dark:bg-slate-800/80 cursor-default";
 function TextareaLengthDisplay(props: {
   value?: MaybeSignal<string>;
   maxLength: number;
+  messages: TextareaMessages;
 }): JSX.Element {
-  const { value, maxLength } = props;
+  const { value, maxLength, messages } = props;
   const s = readMaybeSignal(value) ?? "";
   const len = s.length;
   const remaining = Math.max(0, maxLength - len);
@@ -80,7 +96,7 @@ function TextareaLengthDisplay(props: {
       class="mt-1 block text-left text-xs text-slate-500 dark:text-slate-400"
       aria-live="polite"
     >
-      剩余 {remaining} / {maxLength}
+      {messages.remaining(remaining, maxLength)}
     </span>
   );
 }
@@ -110,7 +126,10 @@ export function Textarea(props: TextareaProps): JSX.Element {
     onPaste,
     name,
     id,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultTextareaMessages, ...messages };
 
   /**
    * 受控 `value` 为 Signal 时由组件写回，再调用外部 `onInput`。
@@ -171,7 +190,7 @@ export function Textarea(props: TextareaProps): JSX.Element {
   return (
     <div>
       <textarea {...textareaProps} value={value} />
-      <TextareaLengthDisplay value={value} maxLength={maxLength} />
+      <TextareaLengthDisplay value={value} maxLength={maxLength} messages={m} />
     </div>
   );
 }

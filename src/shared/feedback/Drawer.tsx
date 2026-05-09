@@ -50,7 +50,20 @@ export interface DrawerProps {
   class?: string;
   titleBarClass?: string;
   contentClass?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultDrawerMessages} */
+  messages?: Partial<DrawerMessages>;
 }
+
+/** Drawer 内置文案 */
+export interface DrawerMessages {
+  /** 关闭按钮 `aria-label` */
+  close: string;
+}
+
+/** 默认中文文案 */
+export const defaultDrawerMessages: DrawerMessages = {
+  close: "关闭",
+};
 
 const defaultWidth = "360px";
 
@@ -104,11 +117,17 @@ export function Drawer(props: DrawerProps): JSX.Element | null {
     titleBarClass,
     contentClass,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const drawerMsg: DrawerMessages = {
+    ...defaultDrawerMessages,
+    ...(props.messages ?? {}),
+  };
 
   const isOpen = readControlledOpenInput(props.open);
   const resolvedTitle = readDrawerTitleInput(props.title);
 
   const widthStyle = typeof width === "number" ? `${width}px` : String(width);
+  /** 与类名 `max-h-dvh` 对齐：限制面板不超过动态视口（移动浏览器地址栏） */
   const drawerPanelStyle: Record<string, string> = {
     width: widthStyle,
     maxWidth: "100vw",
@@ -178,7 +197,7 @@ export function Drawer(props: DrawerProps): JSX.Element | null {
         <div
           ref={setDrawerRef}
           class={twMerge(
-            "relative z-10 flex min-h-0 flex-col h-full max-h-[100dvh] bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xl",
+            "relative z-10 flex min-h-0 flex-col h-full max-h-dvh bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xl",
             isLeft ? "ml-0" : "ml-auto",
             className,
           )}
@@ -229,7 +248,7 @@ export function Drawer(props: DrawerProps): JSX.Element | null {
               {closable && (
                 <button
                   type="button"
-                  aria-label="关闭"
+                  aria-label={drawerMsg.close}
                   class={twMerge(
                     "p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 shrink-0",
                     titleAlign === "center" &&
@@ -246,7 +265,7 @@ export function Drawer(props: DrawerProps): JSX.Element | null {
             <div class="absolute top-4 right-4 z-10">
               <button
                 type="button"
-                aria-label="关闭"
+                aria-label={drawerMsg.close}
                 class="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
                 onClick={() => onClose?.()}
               >

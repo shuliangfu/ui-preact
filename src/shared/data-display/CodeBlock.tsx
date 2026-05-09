@@ -79,7 +79,35 @@ export interface CodeBlockProps {
   preClass?: string;
   /** code 的 class */
   codeClass?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultCodeBlockMessages} */
+  messages?: Partial<CodeBlockMessages>;
 }
+
+/** CodeBlock 内置文案 */
+export interface CodeBlockMessages {
+  /** macOS 风格关闭点 `title` */
+  windowClose: string;
+  /** macOS 风格最小化点 `title` */
+  windowMinimize: string;
+  /** macOS 风格最大化点 `title` */
+  windowMaximize: string;
+  /** 复制按钮 `title` 与 `aria-label` */
+  copy: string;
+  /** 复制成功 toast 文案 */
+  copySuccess: string;
+  /** 复制失败 toast 文案 */
+  copyFail: string;
+}
+
+/** 默认中文文案 */
+export const defaultCodeBlockMessages: CodeBlockMessages = {
+  windowClose: "关闭",
+  windowMinimize: "最小化",
+  windowMaximize: "最大化",
+  copy: "复制",
+  copySuccess: "复制成功",
+  copyFail: "复制失败",
+};
 
 /**
  * 顶部标题栏：圆点装饰 + 居中标题，拆出子组件减轻主 JSX 嵌套，便于 `deno fmt` 稳定。
@@ -87,8 +115,14 @@ export interface CodeBlockProps {
 function CodeBlockHeader(props: {
   title: string | null | undefined;
   showWindowDots: boolean;
+  /** 左上角三色圆点 `title`（与 ui-view {@link CodeBlockMessages} 对齐） */
+  windowDotsTitles: {
+    close: string;
+    minimize: string;
+    maximize: string;
+  };
 }): JSX.Element | null {
-  const { title, showWindowDots } = props;
+  const { title, showWindowDots, windowDotsTitles } = props;
   const hasTitle = title != null && title !== "";
   if (!hasTitle && !showWindowDots) {
     return null;
@@ -102,15 +136,15 @@ function CodeBlockHeader(props: {
         >
           <span
             class="w-2.5 h-2.5 rounded-full bg-[#ef4446]"
-            title="关闭"
+            title={windowDotsTitles.close}
           />
           <span
             class="w-2.5 h-2.5 rounded-full bg-[#e5a00d]"
-            title="最小化"
+            title={windowDotsTitles.minimize}
           />
           <span
             class="w-2.5 h-2.5 rounded-full bg-[#34c749]"
-            title="最大化"
+            title={windowDotsTitles.maximize}
           />
         </div>
       )}
@@ -139,6 +173,11 @@ export function CodeBlock(props: CodeBlockProps): JSX.Element {
     preClass,
     codeClass,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: CodeBlockMessages = {
+    ...defaultCodeBlockMessages,
+    ...(props.messages ?? {}),
+  };
 
   const maxHeightStyle = maxHeight != null
     ? {
@@ -148,6 +187,8 @@ export function CodeBlock(props: CodeBlockProps): JSX.Element {
 
   const lines = code.split("\n");
   const lineCount = lines.length;
+
+  /** `<code>` 的 `break-normal` 已含 overflow-wrap/word-break；Tailwind v4 勿再叠 `[overflow-wrap:]` 任意属性 */
 
   /** 服务端无 DOM，需在 JSX 中直接输出代码文本，供 SSR 可见；客户端由 setCodeRef 替换为高亮结果 */
   const setCodeRef = (el: unknown) => {
@@ -179,13 +220,13 @@ export function CodeBlock(props: CodeBlockProps): JSX.Element {
   const handleCopy = () => {
     if (typeof globalThis.navigator?.clipboard?.writeText === "function") {
       globalThis.navigator.clipboard.writeText(code).then(() => {
-        toast.success("复制成功", 2000);
+        toast.success(m.copySuccess, 2000);
         onCopy?.();
       }).catch(() => {
-        toast.error("复制失败", 2000);
+        toast.error(m.copyFail, 2000);
       });
     } else {
-      toast.error("复制失败", 2000);
+      toast.error(m.copyFail, 2000);
       onCopy?.();
     }
   };
@@ -213,6 +254,7 @@ export function CodeBlock(props: CodeBlockProps): JSX.Element {
     wrapper.insertBefore(style, wrapper.firstChild);
   };
 
+  /** 行号列：每格 min-h 与正文 text-xs×leading-relaxed 对齐（1.421875rem） */
   const lineNumberCol = showLineNumbers && lineCount > 0
     ? (
       <div
@@ -222,7 +264,7 @@ export function CodeBlock(props: CodeBlockProps): JSX.Element {
         {lines.map((_, i) => (
           <div
             key={i}
-            class="flex w-full min-h-[calc(0.875rem*1.625)] items-center justify-center tabular-nums"
+            class="flex w-full min-h-[1.421875rem] items-center justify-center tabular-nums"
           >
             {lineNumberStart + i}
           </div>
@@ -239,15 +281,23 @@ export function CodeBlock(props: CodeBlockProps): JSX.Element {
         className,
       )}
     >
-      <CodeBlockHeader title={title} showWindowDots={showWindowDots} />
+      <CodeBlockHeader
+        title={title}
+        showWindowDots={showWindowDots}
+        windowDotsTitles={{
+          close: m.windowClose,
+          minimize: m.windowMinimize,
+          maximize: m.windowMaximize,
+        }}
+      />
       <div class="relative flex overflow-hidden">
         {copyable && (
           <button
             type="button"
             class="absolute top-2 right-2 z-0 p-2 rounded hover:bg-slate-200/80 dark:hover:bg-slate-600/80 text-slate-600 dark:text-slate-400 transition-colors"
             onClick={handleCopy}
-            title="复制"
-            aria-label="复制"
+            title={m.copy}
+            aria-label={m.copy}
           >
             <IconCopy class="w-4 h-4" />
           </button>
@@ -268,7 +318,7 @@ export function CodeBlock(props: CodeBlockProps): JSX.Element {
             ref={setCodeRef}
             class={twMerge(
               `language-${(language ?? "plaintext").toLowerCase()}`,
-              "inline-block min-w-full w-max whitespace-pre text-left break-normal [overflow-wrap:normal] [word-break:normal]",
+              "inline-block min-w-full w-max whitespace-pre text-left break-normal",
               codeClass,
             )}
           >
