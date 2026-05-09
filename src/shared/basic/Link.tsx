@@ -51,7 +51,7 @@ export interface LinkProps {
 
 /** 默认文字链接：蓝字、焦点环（悬停下划线由 {@link LinkProps.underline} 控制） */
 const textLinkColorClasses =
-  "text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 rounded";
+  "text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 rounded";
 
 /** `<a>` 禁用态（无 `disabled` 属性时的视觉与交互，与 Button 禁用观感一致） */
 const anchorDisabledClasses =

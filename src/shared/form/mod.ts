@@ -7,10 +7,10 @@ export type { MaybeSignal } from "./maybe-signal.ts";
 export { commitMaybeSignal, readMaybeSignal } from "./maybe-signal.ts";
 export { Input } from "./Input.tsx";
 export type { InputProps } from "./Input.tsx";
-export { Password } from "./Password.tsx";
-export type { PasswordProps } from "./Password.tsx";
-export { Textarea } from "./Textarea.tsx";
-export type { TextareaProps } from "./Textarea.tsx";
+export { defaultPasswordMessages, Password } from "./Password.tsx";
+export type { PasswordMessages, PasswordProps } from "./Password.tsx";
+export { defaultTextareaMessages, Textarea } from "./Textarea.tsx";
+export type { TextareaMessages, TextareaProps } from "./Textarea.tsx";
 export { InputNumber } from "./InputNumber.tsx";
 export type { InputNumberProps } from "./InputNumber.tsx";
 export { Checkbox } from "./Checkbox.tsx";
@@ -34,18 +34,30 @@ export type {
   FormItemLabelPosition,
   FormItemProps,
 } from "./FormItem.tsx";
-export { FormList } from "./FormList.tsx";
-export type { FormListProps, FormListRenderRowContext } from "./FormList.tsx";
+export { defaultFormListMessages, FormList } from "./FormList.tsx";
+export type {
+  FormListMessages,
+  FormListProps,
+  FormListRenderRowContext,
+} from "./FormList.tsx";
 export { Search } from "./Search.tsx";
 export type { SearchProps } from "./Search.tsx";
-export { Rate } from "./Rate.tsx";
-export type { RateProps } from "./Rate.tsx";
-export { Slider } from "./Slider.tsx";
-export type { SliderProps } from "./Slider.tsx";
-export { AutoComplete } from "./AutoComplete.tsx";
-export type { AutoCompleteProps } from "./AutoComplete.tsx";
-export { Select } from "./Select.tsx";
-export type { SelectAppearance, SelectOption, SelectProps } from "./Select.tsx";
+export { defaultRateMessages, Rate } from "./Rate.tsx";
+export type { RateMessages, RateProps } from "./Rate.tsx";
+export { defaultSliderMessages, Slider } from "./Slider.tsx";
+export type { SliderMessages, SliderProps } from "./Slider.tsx";
+export { AutoComplete, defaultAutoCompleteMessages } from "./AutoComplete.tsx";
+export type {
+  AutoCompleteMessages,
+  AutoCompleteProps,
+} from "./AutoComplete.tsx";
+export { defaultSelectMessages, Select } from "./Select.tsx";
+export type {
+  SelectAppearance,
+  SelectMessages,
+  SelectOption,
+  SelectProps,
+} from "./Select.tsx";
 export { MultiSelect } from "./MultiSelect.tsx";
 export type {
   MultiSelectAppearance,
@@ -58,9 +70,10 @@ export type {
   CascaderOption,
   CascaderProps,
 } from "./Cascader.tsx";
-export { TreeSelect } from "./TreeSelect.tsx";
+export { defaultTreeSelectMessages, TreeSelect } from "./TreeSelect.tsx";
 export type {
   TreeSelectAppearance,
+  TreeSelectMessages,
   TreeSelectOption,
   TreeSelectProps,
 } from "./TreeSelect.tsx";
@@ -91,16 +104,25 @@ export {
   uploadFilePhasedChunks,
   uploadFileSimple,
 } from "./upload-http.ts";
-export { formatUploadFileSize, Upload } from "./Upload.tsx";
+export {
+  defaultUploadMessages,
+  formatUploadFileSize,
+  Upload,
+} from "./Upload.tsx";
 export type {
   UploadCoreProps,
   UploadFile,
   UploadFileStatus,
+  UploadMessages,
   UploadMultipleValueMode,
   UploadProps,
 } from "./Upload.tsx";
-export { DateTimePicker } from "./DateTimePicker.tsx";
+export {
+  DateTimePicker,
+  defaultDateTimePickerMessages,
+} from "./DateTimePicker.tsx";
 export type {
+  DateTimePickerMessages,
   DateTimePickerMode,
   DateTimePickerProps,
   DateTimePickerRangeValue,
@@ -113,21 +135,41 @@ export type {
   TimePickerRangeValue,
   TimePickerValue,
 } from "./TimePicker.tsx";
-export { ColorPicker } from "./ColorPicker.tsx";
-export type { ColorPickerHandle, ColorPickerProps } from "./ColorPicker.tsx";
-export { Mentions } from "./Mentions.tsx";
-export type { MentionOption, MentionsProps } from "./Mentions.tsx";
-export { RichTextEditor } from "./RichTextEditor.tsx";
+export { ColorPicker, defaultColorPickerMessages } from "./ColorPicker.tsx";
 export type {
+  ColorPickerHandle,
+  ColorPickerMessages,
+  ColorPickerProps,
+} from "./ColorPicker.tsx";
+export { defaultMentionsMessages, Mentions } from "./Mentions.tsx";
+export type {
+  MentionOption,
+  MentionsMessages,
+  MentionsProps,
+} from "./Mentions.tsx";
+export {
+  defaultRichTextEditorMessages,
+  RichTextEditor,
+} from "./RichTextEditor.tsx";
+export type {
+  RichTextEditorMessages,
   RichTextEditorProps,
   ToolbarConfig,
   ToolbarItem,
   ToolbarPreset,
 } from "./RichTextEditor.tsx";
-export { MarkdownEditor } from "./MarkdownEditor.tsx";
+export {
+  defaultMarkdownEditorMessages,
+  MarkdownEditor,
+} from "./MarkdownEditor.tsx";
 export type {
+  MarkdownEditorMessages,
   MarkdownEditorPreviewMode,
   MarkdownEditorProps,
 } from "./MarkdownEditor.tsx";
-export { Transfer } from "./Transfer.tsx";
-export type { TransferItem, TransferProps } from "./Transfer.tsx";
+export { defaultTransferMessages, Transfer } from "./Transfer.tsx";
+export type {
+  TransferItem,
+  TransferMessages,
+  TransferProps,
+} from "./Transfer.tsx";

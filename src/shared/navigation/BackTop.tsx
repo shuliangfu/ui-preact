@@ -21,7 +21,20 @@ export interface BackTopProps {
   bottom?: number;
   children?: ComponentChildren;
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultBackTopMessages} */
+  messages?: Partial<BackTopMessages>;
 }
+
+/** BackTop 内置文案 */
+export interface BackTopMessages {
+  /** 按钮 `aria-label` */
+  ariaLabel: string;
+}
+
+/** 默认中文文案 */
+export const defaultBackTopMessages: BackTopMessages = {
+  ariaLabel: "回到顶部",
+};
 
 type BackTopEntry = {
   el: HTMLElement;
@@ -144,6 +157,11 @@ export function BackTop(props: BackTopProps): JSX.Element {
     children,
     class: className,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: BackTopMessages = {
+    ...defaultBackTopMessages,
+    ...(props.messages ?? {}),
+  };
 
   const setWrapperRef = (el: unknown) => {
     const div = el as HTMLDivElement | null;
@@ -194,7 +212,7 @@ export function BackTop(props: BackTopProps): JSX.Element {
           className,
         )}
         onClick={handleClick}
-        aria-label="回到顶部"
+        aria-label={m.ariaLabel}
       >
         {children != null
           ? children

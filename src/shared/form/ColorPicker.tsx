@@ -51,6 +51,35 @@ export interface ColorPickerHandle {
   close(commit: boolean): void;
 }
 
+/** ColorPicker 内置文案 */
+export interface ColorPickerMessages {
+  /** 屏幕取色按钮 `aria-label` */
+  eyedropper: string;
+  /** 屏幕取色按钮 `title` */
+  eyedropperTitle: string;
+  /** 工具区说明文案 */
+  hint: string;
+  /** 「确定」按钮 */
+  confirm: string;
+  /** 「取消」按钮 */
+  cancel: string;
+  /** 浮层 `aria-label` */
+  dialog: string;
+  /** 仅色块触发器的 `aria-label`，参数为当前颜色 hex */
+  swatchTrigger: (hex: string) => string;
+}
+
+/** 默认中文文案 */
+export const defaultColorPickerMessages: ColorPickerMessages = {
+  eyedropper: "屏幕取色",
+  eyedropperTitle: "取色器（需浏览器支持）",
+  hint: "拖动方格与色相条选择颜色",
+  confirm: "确定",
+  cancel: "取消",
+  dialog: "颜色选择",
+  swatchTrigger: (hex) => `选择颜色，当前 ${hex}`,
+};
+
 export interface ColorPickerProps {
   /** 当前颜色 #rrggbb；见 {@link MaybeSignal} */
   value?: MaybeSignal<string>;
@@ -103,6 +132,8 @@ export interface ColorPickerProps {
    * 不影响 {@link ColorPickerHandle.openAtClientPoint} 等命令式打开（仍为独立坐标 `floating` 模式）。
    */
   panelAttach?: "anchored" | "viewport";
+  /** 多语言/自定义文案；未传字段走 {@link defaultColorPickerMessages} */
+  messages?: Partial<ColorPickerMessages>;
 }
 
 /** 与 DatePicker、Select 等共用 Esc 关闭（依赖应用侧 `initDropdownEsc` 全局监听） */
@@ -358,6 +389,8 @@ interface ColorPickerPanelInteriorProps {
   flushDraftInputAfterDrag: () => void;
   confirmPanel: () => void;
   cancelPanel: () => void;
+  /** 合并后的用户可见文案 */
+  messages: ColorPickerMessages;
 }
 
 /**
@@ -386,6 +419,7 @@ function ColorPickerPanelInterior(
     flushDraftInputAfterDrag,
     confirmPanel,
     cancelPanel,
+    messages: panelMessages,
   } = props;
 
   const h = hue.value;
@@ -401,8 +435,8 @@ function ColorPickerPanelInterior(
           <button
             type="button"
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
-            title="取色器（需浏览器支持）"
-            aria-label="屏幕取色"
+            title={panelMessages.eyedropperTitle}
+            aria-label={panelMessages.eyedropper}
             onClick={() => void tryEyeDropper()}
           >
             <IconDroplet
@@ -418,7 +452,7 @@ function ColorPickerPanelInterior(
             aria-hidden
           />
           <p class="text-xs text-slate-500 dark:text-slate-400">
-            拖动方格与色相条选择颜色
+            {panelMessages.hint}
           </p>
         </div>
       )}
@@ -641,14 +675,14 @@ function ColorPickerPanelInterior(
           class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
           onClick={() => confirmPanel()}
         >
-          确定
+          {panelMessages.confirm}
         </button>
         <button
           type="button"
           class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-700"
           onClick={() => cancelPanel()}
         >
-          取消
+          {panelMessages.cancel}
         </button>
       </div>
     </>
@@ -672,6 +706,9 @@ export function ColorPicker(props: ColorPickerProps): JSX.Element {
     showToolbar = false,
     hideTrigger = false,
   } = props;
+
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultColorPickerMessages, ...props.messages };
 
   /**
    * 当前受控颜色（#rrggbb）。
@@ -1109,7 +1146,7 @@ export function ColorPicker(props: ColorPickerProps): JSX.Element {
           )}
           aria-expanded={panelOpen.value}
           aria-haspopup="dialog"
-          aria-label={swatchOnly ? `选择颜色，当前 ${displayHex}` : undefined}
+          aria-label={swatchOnly ? m.swatchTrigger(displayHex) : undefined}
           title={swatchOnly ? displayHex : ""}
           /**
            * 打开后不在触发器上「再点即确定」：选色仅改草稿，须点面板内「确定」或点外部/Esc 关闭（与 DatePicker 等一致）。
@@ -1145,7 +1182,7 @@ export function ColorPicker(props: ColorPickerProps): JSX.Element {
       {panelOpen.value && (
         <div
           role="dialog"
-          aria-label="颜色选择"
+          aria-label={m.dialog}
           class={panelClass}
           style={floatingStyle}
           ref={(el: HTMLElement | null) => {
@@ -1211,6 +1248,7 @@ export function ColorPicker(props: ColorPickerProps): JSX.Element {
             flushDraftInputAfterDrag={flushDraftInputAfterDrag}
             confirmPanel={confirmPanel}
             cancelPanel={cancelPanel}
+            messages={m}
           />
         </div>
       )}

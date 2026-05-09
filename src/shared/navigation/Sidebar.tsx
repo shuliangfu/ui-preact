@@ -53,7 +53,23 @@ export interface SidebarProps {
    * 默认在 `accordionGroupName` 后追加 `-drawer`。
    */
   drawerAccordionGroupName?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultSidebarMessages} */
+  messages?: Partial<SidebarMessages>;
 }
+
+/** Sidebar 内置文案 */
+export interface SidebarMessages {
+  /** 导航 `aria-label` */
+  navAriaLabel: string;
+  /** 抽屉默认标题（无 `drawerTitle` 与 `overview.label` 时回退） */
+  drawerTitleFallback: string;
+}
+
+/** 默认中文文案 */
+export const defaultSidebarMessages: SidebarMessages = {
+  navAriaLabel: "侧栏导航",
+  drawerTitleFallback: "导航",
+};
 
 /**
  * 默认取当前路径：优先 `location.pathname`；无 location（SSR）时读 dweb hybrid 注入的 `globalThis.__DATA__.pathname`，
@@ -129,6 +145,8 @@ function SidebarNavigation(props: {
   accordionGroupName: string;
   /** `drawer`：全宽铺满、无块级间距，用于小屏 {@link Drawer} */
   variant?: "default" | "drawer";
+  /** 由 {@link Sidebar} 注入：合并后的 `aria-label` 文案 */
+  navAriaLabel?: string;
 }): JSX.Element {
   const {
     overview,
@@ -137,6 +155,7 @@ function SidebarNavigation(props: {
     getCurrentPath,
     accordionGroupName,
     variant = "default",
+    navAriaLabel = defaultSidebarMessages.navAriaLabel,
   } = props;
 
   const pathNorm = getCurrentPath();
@@ -153,7 +172,7 @@ function SidebarNavigation(props: {
   return (
     <nav
       class={twMerge("space-y-3", d ? drawerNavExtras.nav : "")}
-      aria-label="侧栏导航"
+      aria-label={navAriaLabel}
     >
       {overview != null && (
         <div class={d ? drawerNavExtras.overviewWrap : "mb-4"}>
@@ -271,6 +290,11 @@ export function Sidebar(props: SidebarProps): JSX.Element {
     drawerTitle: drawerTitleProp,
     drawerAccordionGroupName,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: SidebarMessages = {
+    ...defaultSidebarMessages,
+    ...(props.messages ?? {}),
+  };
 
   const asideClass = twMerge(
     sidebarChromeBg,
@@ -286,7 +310,8 @@ export function Sidebar(props: SidebarProps): JSX.Element {
   };
 
   if (drawerOpen != null) {
-    const drawerTitle = drawerTitleProp ?? overview?.label ?? "导航";
+    const drawerTitle = drawerTitleProp ?? overview?.label ??
+      m.drawerTitleFallback;
     const drawerGroup = drawerAccordionGroupName ??
       `${accordionGroupName}-drawer`;
 
@@ -310,6 +335,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
           <SidebarNavigation
             {...navShared}
             accordionGroupName={accordionGroupName}
+            navAriaLabel={m.navAriaLabel}
           />
         </aside>
         <div class="md:hidden">
@@ -337,6 +363,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
                 {...navShared}
                 accordionGroupName={drawerGroup}
                 variant="drawer"
+                navAriaLabel={m.navAriaLabel}
               />
             </div>
           </Drawer>
@@ -350,6 +377,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
       <SidebarNavigation
         {...navShared}
         accordionGroupName={accordionGroupName}
+        navAriaLabel={m.navAriaLabel}
       />
     </aside>
   );

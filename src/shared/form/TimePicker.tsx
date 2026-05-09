@@ -18,6 +18,7 @@ import { twMerge } from "tailwind-merge";
 /** 触发器右侧使用时钟图标 */
 import { IconClock } from "../basic/icons/Clock.tsx";
 import type { SizeVariant } from "../types.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import {
   controlBlueFocusRing,
   pickerTriggerSizeClasses,
@@ -63,6 +64,40 @@ export type TimePickerMode = "single" | "range" | "multiple";
 /** 受控值形态（由 {@link TimePickerProps.mode} 决定） */
 export type TimePickerValue = string | TimePickerRangeValue | string[];
 
+/** TimePicker 内置文案 */
+export interface TimePickerMessages {
+  placeholder: string;
+  dialog: string;
+  confirm: string;
+  cancel: string;
+  rangePlaceholder: string;
+  multipleSummary: (count: number) => string;
+  hour: string;
+  minute: string;
+  second: string;
+  start: string;
+  end: string;
+  add: string;
+  removeTitle: string;
+}
+
+/** 默认中文文案 */
+export const defaultTimePickerMessages: TimePickerMessages = {
+  placeholder: "请选择时间",
+  dialog: "选择时间",
+  confirm: "确定",
+  cancel: "取消",
+  rangePlaceholder: "…",
+  multipleSummary: (count) => `${count} 个时刻`,
+  hour: "时",
+  minute: "分",
+  second: "秒",
+  start: "开始",
+  end: "结束",
+  add: "加入已选",
+  removeTitle: "点击移除",
+};
+
 export interface TimePickerProps {
   mode?: TimePickerMode;
   /** single → `HH:mm`；range → `{ start?, end? }`；multiple → `HH:mm[]`；见 {@link MaybeSignal} */
@@ -86,6 +121,8 @@ export interface TimePickerProps {
    * 浮层挂载方式：`anchored`（默认）相对根 `absolute`；`viewport` 为视口 `fixed` + 几何同步，用于表格等 overflow 裁切场景。
    */
   panelAttach?: "anchored" | "viewport";
+  /** 多语言/自定义文案；未传字段走 {@link defaultTimePickerMessages} */
+  messages?: Partial<TimePickerMessages>;
 }
 
 const DROPDOWN_ESC_KEY = "__lastDropdownClose" as const;
@@ -163,6 +200,8 @@ function timePickerDisplayText(
   mode: TimePickerMode,
   raw: unknown,
   placeholder: string,
+  rangePlaceholder: string,
+  multipleSummary: (count: number) => string,
 ): string {
   if (mode === "single") {
     const s = typeof raw === "string" ? raw : "";
@@ -173,12 +212,12 @@ function timePickerDisplayText(
     const st = o.start?.trim() ?? "";
     const en = o.end?.trim() ?? "";
     if (st === "" && en === "") return placeholder;
-    return `${st || "…"} ~ ${en || "…"}`;
+    return `${st || rangePlaceholder} ~ ${en || rangePlaceholder}`;
   }
   const arr = isHmStringArray(raw) ? raw : [];
   if (arr.length === 0) return placeholder;
   if (arr.length <= 2) return arr.join("、");
-  return `${arr.length} 个时刻`;
+  return multipleSummary(arr.length);
 }
 
 function timePickerHiddenSerialized(
@@ -313,6 +352,8 @@ interface TimePickerTimeStripProps {
   hourSig: Signal<number>;
   minuteSig: Signal<number>;
   secondSig: Signal<number>;
+  /** 时 / 分 / 秒列表头文案（与 {@link TimePickerMessages} 一致） */
+  segmentLabels: { hour: string; minute: string; second: string };
   /** 调试用：如 `range-start` / `range-end`，区分双轨 */
   debugContext?: string;
 }
@@ -330,6 +371,7 @@ function TimePickerTimeStrip(props: TimePickerTimeStripProps): JSX.Element {
     hourSig,
     minuteSig,
     secondSig,
+    segmentLabels,
     debugContext,
   } = props;
   /** 浮层内按草稿滚动时锁定子树，与 {@link schedulePickerTimeDraftColumnsScroll} 传入的 stripScope 一致 */
@@ -345,10 +387,15 @@ function TimePickerTimeStrip(props: TimePickerTimeStripProps): JSX.Element {
   const timeColCount = (showHourCol ? 1 : 0) + (showMinuteCol ? 1 : 0) +
     (showSecondCol ? 1 : 0);
   const singleTimeCol = timeColCount === 1;
-  /** 单列表头：随 format 唯一占位为 时 / 分 / 秒 */
-  const singleColHeader = pickerTimeSegmentSingleColumnHeaderLabel(
+  /** 单列表头：随 format 唯一占位为 时 / 分 / 秒（映射为 segmentLabels） */
+  const singleColHeaderRaw = pickerTimeSegmentSingleColumnHeaderLabel(
     timeFormatSpec.pieces,
   );
+  const singleColHeader = singleColHeaderRaw === "分"
+    ? segmentLabels.minute
+    : singleColHeaderRaw === "秒"
+    ? segmentLabels.second
+    : segmentLabels.hour;
   const colListClass = twMerge(
     pickerTimeListScrollClass,
     pickerTimeListInnerWidthClass,
@@ -518,7 +565,7 @@ function TimePickerTimeStrip(props: TimePickerTimeStripProps): JSX.Element {
       {showHourCol && (
         <div class={colWrapClass}>
           <div class="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1 text-center border-b border-slate-200 dark:border-slate-600">
-            时
+            {segmentLabels.hour}
           </div>
           <div
             class={colListClass}
@@ -556,35 +603,37 @@ function TimePickerTimeStrip(props: TimePickerTimeStripProps): JSX.Element {
       {showMinuteCol && (
         <div class={colWrapClass}>
           <div class="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1 text-center border-b border-slate-200 dark:border-slate-600">
-            分
+            {segmentLabels.minute}
           </div>
           <div
             class={colListClass}
             data-picker-time-col
             data-picker-time-kind="minute"
           >
-            {MINUTES.map((m) => {
+            {MINUTES.map((minVal) => {
               const pickThisMinute = () => {
-                minuteSig.value = m;
+                minuteSig.value = minVal;
               };
               return (
                 <button
-                  key={m}
+                  key={minVal}
                   type="button"
-                  data-picker-cell-value={m}
-                  data-picker-time-active={selectedMinute === m
+                  data-picker-cell-value={minVal}
+                  data-picker-time-active={selectedMinute === minVal
                     ? true
                     : undefined}
                   class={twMerge(
                     PICKER_TIME_LIST_ITEM_BASE,
                     "w-full",
-                    selectedMinute === m ? PICKER_TIME_LIST_ITEM_SELECTED : "",
+                    selectedMinute === minVal
+                      ? PICKER_TIME_LIST_ITEM_SELECTED
+                      : "",
                   )}
                   onPointerDown={(e: PointerEvent) =>
                     runTimeStripPrimaryPointerPick(e, pickThisMinute)}
                   onClick={pickThisMinute}
                 >
-                  {String(m).padStart(2, "0")}
+                  {String(minVal).padStart(2, "0")}
                 </button>
               );
             })}
@@ -594,7 +643,7 @@ function TimePickerTimeStrip(props: TimePickerTimeStripProps): JSX.Element {
       {showSecondCol && (
         <div class={colWrapClass}>
           <div class="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1 text-center border-b border-slate-200 dark:border-slate-600">
-            秒
+            {segmentLabels.second}
           </div>
           <div
             class={colListClass}
@@ -637,8 +686,20 @@ function TimePickerTimeStrip(props: TimePickerTimeStripProps): JSX.Element {
  * TimePicker：时间选择器。
  */
 export function TimePicker(props: TimePickerProps): JSX.Element {
+  /** 与 {@link Input} 一致：继承 Form 注入的控件尺寸 */
+  const resolvedControlSize = resolveFormControlSize(props.size);
   const mode: TimePickerMode = props.mode ?? "single";
   const timeFormatSpec = resolveTimePickerFormatSpec(props.format, mode);
+  /** 合并默认中文文案与外部传入 messages */
+  const tm: TimePickerMessages = {
+    ...defaultTimePickerMessages,
+    ...(props.messages ?? {}),
+  };
+  const segmentLabels = {
+    hour: tm.hour,
+    minute: tm.minute,
+    second: tm.second,
+  };
 
   /** 读受控值；打开 / 展示文案时调用，与 {@link MaybeSignal} 一致 */
   const rawResolved = () => resolveTimePickerRaw(props.value);
@@ -891,17 +952,22 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
 
   const rawCommitted = resolveTimePickerRaw(props.value);
   const hiddenVal = timePickerHiddenSerialized(mode, rawCommitted);
-  const placeholder = props.placeholder ?? "请选择时间";
+  const placeholder = props.placeholder ?? tm.placeholder;
   const rawDisplay = rawForTriggerDisplay();
-  const displayText = timePickerDisplayText(mode, rawDisplay, placeholder);
+  const displayText = timePickerDisplayText(
+    mode,
+    rawDisplay,
+    placeholder,
+    tm.rangePlaceholder,
+    tm.multipleSummary,
+  );
   const hasVal = timePickerHasValue(mode, rawDisplay);
-  const size = props.size ?? "md";
   const triggerBtnClass = twMerge(
     pickerTriggerSurface,
     controlBlueFocusRing(!props.hideFocusRing),
-    pickerTriggerSizeClasses[size],
+    pickerTriggerSizeClasses[resolvedControlSize],
   );
-  const iconProps = pickerCalendarIconProps(size);
+  const iconProps = pickerCalendarIconProps(resolvedControlSize);
   const rootClass = twMerge("relative inline-block", props.class);
   const disabled = props.disabled ?? false;
   const useViewportPanel = (props.panelAttach ?? "anchored") === "viewport";
@@ -968,7 +1034,7 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
       {openState.value && (
         <div
           role="dialog"
-          aria-label="选择时间"
+          aria-label={tm.dialog}
           class={twMerge(
             "pointer-events-auto w-max min-w-30 max-w-[min(100vw-1rem,24rem)] p-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg flex flex-col gap-2",
             useViewportPanel
@@ -1005,6 +1071,7 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
               hourSig={draftHour}
               minuteSig={draftMinute}
               secondSig={draftSecond}
+              segmentLabels={segmentLabels}
             />
           )}
 
@@ -1012,25 +1079,27 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
             <div class="flex flex-col gap-3">
               <div>
                 <div class="text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  开始
+                  {tm.start}
                 </div>
                 <TimePickerTimeStrip
                   timeFormatSpec={timeFormatSpec}
                   hourSig={draftRangeStartH}
                   minuteSig={draftRangeStartM}
                   secondSig={draftRangeStartS}
+                  segmentLabels={segmentLabels}
                   debugContext="range-start"
                 />
               </div>
               <div>
                 <div class="text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  结束
+                  {tm.end}
                 </div>
                 <TimePickerTimeStrip
                   timeFormatSpec={timeFormatSpec}
                   hourSig={draftRangeEndH}
                   minuteSig={draftRangeEndM}
                   secondSig={draftRangeEndS}
+                  segmentLabels={segmentLabels}
                   debugContext="range-end"
                 />
               </div>
@@ -1044,6 +1113,7 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
                 hourSig={draftHour}
                 minuteSig={draftMinute}
                 secondSig={draftSecond}
+                segmentLabels={segmentLabels}
                 debugContext="multiple-strip"
               />
               <button
@@ -1051,7 +1121,7 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
                 class="px-2 py-1.5 text-xs rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
                 onClick={addCurrentToMultiple}
               >
-                加入已选
+                {tm.add}
               </button>
               {multiChipsList.length > 0 && (
                 <div class="flex flex-wrap gap-1 max-w-[16rem]">
@@ -1061,7 +1131,7 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
                       type="button"
                       class="px-1.5 py-0.5 text-xs rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
                       onClick={() => removeFromMultiple(hm)}
-                      title="点击移除"
+                      title={tm.removeTitle}
                     >
                       {hm} ×
                     </button>
@@ -1077,14 +1147,14 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
               class="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
               onClick={handleConfirm}
             >
-              确定
+              {tm.confirm}
             </button>
             <button
               type="button"
               class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
               onClick={handleCancel}
             >
-              取消
+              {tm.cancel}
             </button>
           </div>
         </div>

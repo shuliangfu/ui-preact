@@ -61,7 +61,7 @@ export function Tabs(props: TabsProps): JSX.Element {
   const cardCls = "flex gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800";
 
   const tabBtnBase =
-    "px-4 py-2 text-sm font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed";
+    "px-4 py-2 text-sm font-medium transition-colors rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed";
   const tabBtnLine =
     "-mb-px rounded-t-md rounded-b-none border border-transparent text-slate-600 dark:text-slate-400 " +
     "hover:z-10 hover:border-slate-200 hover:border-b-0 hover:bg-inherit hover:text-slate-900 dark:hover:border-slate-600 dark:hover:bg-inherit dark:hover:text-slate-100 " +

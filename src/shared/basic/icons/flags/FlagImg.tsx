@@ -8,12 +8,25 @@ import { twMerge } from "tailwind-merge";
 
 import type { CountryFlagComponentProps } from "./countryFlagTypes.ts";
 
+/** FlagImg 内置文案 */
+export interface FlagImgMessages {
+  /** SVG 内容为空时的 `title` 占位 */
+  emptySvgTitle: string;
+}
+
+/** 默认中文文案 */
+export const defaultFlagImgMessages: FlagImgMessages = {
+  emptySvgTitle: "空 SVG",
+};
+
 /**
  * 根 props：`svg` 为**完整** 1:1 国旗 XML 内容（`flag-icons` 风格）；其余为图标尺寸/样式/无障碍。
  */
 export type FlagImgProps = CountryFlagComponentProps & {
   /** 单国 SVG 全文（不与其他国合并） */
   svg: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultFlagImgMessages} */
+  messages?: Partial<FlagImgMessages>;
 };
 
 /**
@@ -21,6 +34,11 @@ export type FlagImgProps = CountryFlagComponentProps & {
  */
 export function FlagImg(props: FlagImgProps): JSX.Element {
   const t = props.title;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: FlagImgMessages = {
+    ...defaultFlagImgMessages,
+    ...(props.messages ?? {}),
+  };
   if (props.svg.length === 0) {
     return (
       <Icon
@@ -32,7 +50,7 @@ export function FlagImg(props: FlagImgProps): JSX.Element {
       >
         <span
           class="text-[0.5rem] font-bold leading-none text-slate-400"
-          title={t ?? "空 SVG"}
+          title={t ?? m.emptySvgTitle}
           aria-hidden
         >
           ?
@@ -52,7 +70,7 @@ export function FlagImg(props: FlagImgProps): JSX.Element {
          * 部分环境下在布局完成前为 0×0，会呈现「空白白块」；需拉满以匹配 `w-* h-*` 容器。
          * `loading` 用 eager，避免 lazy 与首帧布局竞态导致短暂不可见。
          */
-        "overflow-hidden rounded-sm p-0 !items-stretch !justify-stretch",
+        "overflow-hidden rounded-sm p-0 items-stretch! justify-stretch!",
         props.class,
       )}
     >

@@ -17,6 +17,7 @@ import {
   autofillVisualClass,
   inputNativeAutoComplete,
 } from "./input-autofill-classes.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import {
   commitMaybeSignal,
   type MaybeSignal,
@@ -74,7 +75,20 @@ export interface InputProps {
    * 自动完成与暗色 `:-webkit-autofill` 长 class：`true` 时合并并按 `type` 写原生 token；`string` 时原样；`false`/不传则都不加。
    */
   autoComplete?: boolean | string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultInputMessages} */
+  messages?: Partial<InputMessages>;
 }
+
+/** Input 内置文案 */
+export interface InputMessages {
+  /** 清除按钮 `aria-label`（`allowClear` 时显示） */
+  clear: string;
+}
+
+/** 默认中文文案 */
+export const defaultInputMessages: InputMessages = {
+  clear: "清除",
+};
 
 const sizeClasses: Record<SizeVariant, string> = {
   xs: "px-2.5 py-1 text-xs rounded-md",
@@ -108,7 +122,7 @@ const sizeTextClasses: Record<SizeVariant, string> = {
 
 /** 底纹；autofill 长类见 {@link autofillVisualClass}（仅当设了 `autoComplete` 时） */
 const inputSurfaceBase =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 const readOnlyCls = "bg-slate-50 dark:bg-slate-800/80 cursor-default";
 
 /** 左右缀：与中间输入区分隔线、略浅底，仍在同一外框内 */
@@ -166,6 +180,8 @@ function InputGroupShell(props: {
   onClick: InputProps["onClick"];
   onPaste: InputProps["onPaste"];
   onClear: () => void;
+  /** 清除按钮无障碍标签（来自 {@link InputMessages.clear}） */
+  clearAriaLabel: string;
 }): JSX.Element {
   const {
     size,
@@ -193,10 +209,11 @@ function InputGroupShell(props: {
     onClick,
     onPaste,
     onClear,
+    clearAriaLabel,
   } = props;
 
   const innerInputCls = twMerge(
-    "min-w-0 flex-1 border-0 bg-transparent shadow-none outline-none focus:ring-0",
+    "min-w-0 flex-1 border-0 bg-transparent shadow-none outline-hidden focus:ring-0",
     "text-inherit placeholder:text-slate-400 dark:placeholder:text-slate-500",
     "disabled:cursor-not-allowed",
     autofillVisualClass(autoCompleteHint),
@@ -241,7 +258,7 @@ function InputGroupShell(props: {
               sizePadYClasses[size],
             )}
             onClick={onClear}
-            aria-label="清除"
+            aria-label={clearAriaLabel}
           >
             <ClearIcon />
           </button>
@@ -268,7 +285,7 @@ function InputGroupShell(props: {
  */
 export function Input(props: InputProps): JSX.Element {
   const {
-    size = "md",
+    size: sizeProp,
     disabled = false,
     placeholder,
     value,
@@ -292,7 +309,11 @@ export function Input(props: InputProps): JSX.Element {
     name,
     id,
     autoComplete,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultInputMessages, ...messages };
+  const size = resolveFormControlSize(sizeProp);
 
   const sizeCls = sizeClasses[size];
   const nativeAutoComplete = inputNativeAutoComplete(autoComplete, type);
@@ -412,6 +433,7 @@ export function Input(props: InputProps): JSX.Element {
       onClick={onClick}
       onPaste={onPaste}
       onClear={handleClear}
+      clearAriaLabel={m.clear}
     />
   );
 }

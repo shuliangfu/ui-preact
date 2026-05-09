@@ -12,6 +12,8 @@ import {
   Title,
 } from "@dreamer/ui-preact";
 import { signal } from "@preact/signals";
+import type { DocsApiTableRow } from "../../../components/DocsApiTable.tsx";
+import { DocsMessagesSection } from "../../../components/DocsMessagesSection.tsx";
 
 /**
  * 文档示例用：当前本地日期的 YYYY-MM-DD（与 DatePicker 的 value 格式一致）。
@@ -108,6 +110,60 @@ const DATEPICKER_API: ApiRow[] = [
   },
   { name: "name", type: "string", default: "-", description: "原生 name" },
   { name: "id", type: "string", default: "-", description: "原生 id" },
+  {
+    name: "messages",
+    type: "Partial<DatePickerMessages>",
+    default: "-",
+    description:
+      "本地化文案；字段见上文「文案（messages）」表，勿将各文案键摊入本 API 表",
+  },
+];
+
+/** 文案字段（独立表格，不与 props API 混排） */
+const DATEPICKER_MESSAGES: DocsApiTableRow[] = [
+  {
+    name: "placeholder",
+    type: "string",
+    default: `"请选择日期"`,
+    description: "触发器占位；props.placeholder 优先",
+  },
+  {
+    name: "dialog",
+    type: "string",
+    default: `"选择日期"`,
+    description: "日期浮层 aria-label",
+  },
+  {
+    name: "confirm",
+    type: "string",
+    default: `"确定"`,
+    description: "底部确定按钮",
+  },
+  {
+    name: "cancel",
+    type: "string",
+    default: `"取消"`,
+    description: "底部取消按钮",
+  },
+  {
+    name: "rangePlaceholder",
+    type: "string",
+    default: `"…"`,
+    description: "range 起始端未选占位",
+  },
+  {
+    name: "multipleSummary",
+    type: "(count: number) => string",
+    default: "`(count) => \\`${count} 个日期\\``",
+    description: "多选超过 2 项时触发器摘要",
+  },
+  {
+    name: "calendarNav",
+    type: "Partial<PickerCalendarNavMessages>",
+    default: "`{}`",
+    description:
+      "日历导航条；子键与 defaultPickerCalendarNavMessages 对齐，一层浅合并",
+  },
 ];
 
 const importCode =
@@ -395,10 +451,16 @@ const valLg = signal(today);
         </Form>
       </section>
 
+      <DocsMessagesSection
+        interfaceName="DatePickerMessages"
+        defaultExportName="defaultDatePickerMessages"
+        rows={DATEPICKER_MESSAGES}
+      />
+
       <section class="space-y-3">
         <Title level={2}>API</Title>
         <Paragraph class="text-sm text-slate-600 dark:text-slate-400">
-          组件接收以下属性（均为可选）。
+          组件接收以下属性（均为可选）。文案键见上文「文案（messages）」独立表格。
         </Paragraph>
         <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-600">
           <table class="w-full min-w-lg text-sm">

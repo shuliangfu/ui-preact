@@ -53,14 +53,36 @@ export interface PullRefreshProps {
    * 供 {@link ScrollList} 等组合组件挂 `IntersectionObserver` 或 `scroll` 做上拉加载。
    */
   scrollContainerRef?: (el: HTMLDivElement | null) => void;
+  /** 多语言/自定义文案；外层显式 `pullingText`/`loosingText`/`loadingText`/`successText` 优先于 messages */
+  messages?: Partial<PullRefreshMessages>;
 }
+
+/** PullRefresh 内置文案 */
+export interface PullRefreshMessages {
+  /** 未超过阈值的提示 */
+  pulling: string;
+  /** 已超过阈值的提示 */
+  loosing: string;
+  /** 加载中提示 */
+  loading: string;
+  /** 刷新成功提示；为 `null` 时不显示成功态 */
+  success: string | null;
+}
+
+/** 默认中文文案 */
+export const defaultPullRefreshMessages: PullRefreshMessages = {
+  pulling: "下拉即可刷新…",
+  loosing: "释放即可刷新…",
+  loading: "加载中…",
+  success: null,
+};
 
 /** 判定「在列表顶部」的 scrollTop 上限（px），与 ui-view 一致 */
 const PULL_REFRESH_TOP_SLOP_PX = 8;
 
-const DEFAULT_PULLING = "下拉即可刷新…";
-const DEFAULT_LOOSING = "释放即可刷新…";
-const DEFAULT_LOADING = "加载中…";
+/**
+ * 下拉过程默认文案见 {@link defaultPullRefreshMessages}（可通过 `messages` 覆盖）。
+ */
 
 /**
  * 下拉刷新：头区 + 滚动层联动位移，文案随下拉距离切换。
@@ -70,10 +92,15 @@ const DEFAULT_LOADING = "加载中…";
 export function PullRefresh(props: PullRefreshProps): JSX.Element {
   const {
     onRefresh,
-    pullingText = DEFAULT_PULLING,
-    loosingText = DEFAULT_LOOSING,
-    loadingText = DEFAULT_LOADING,
-    successText: _successText = null,
+    messages: _messagesProp,
+    pullingText =
+      (_messagesProp?.pulling ?? defaultPullRefreshMessages.pulling),
+    loosingText =
+      (_messagesProp?.loosing ?? defaultPullRefreshMessages.loosing),
+    loadingText =
+      (_messagesProp?.loading ?? defaultPullRefreshMessages.loading),
+    successText: _successText =
+      (_messagesProp?.success ?? defaultPullRefreshMessages.success),
     successDuration: _successDuration = 500,
     headHeight = 50,
     pullDistance: pullDistanceProp,

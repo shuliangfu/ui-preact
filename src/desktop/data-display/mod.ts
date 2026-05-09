@@ -45,7 +45,12 @@ export {
   type CollapseItem,
   type CollapseProps,
 } from "./Collapse.tsx";
-export { Carousel, type CarouselProps } from "./Carousel.tsx";
+export {
+  Carousel,
+  type CarouselMessages,
+  type CarouselProps,
+  defaultCarouselMessages,
+} from "./Carousel.tsx";
 export { Tree, type TreeNode, type TreeProps } from "./Tree.tsx";
 export {
   Calendar,

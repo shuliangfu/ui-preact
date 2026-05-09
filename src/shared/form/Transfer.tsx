@@ -19,6 +19,35 @@ export interface TransferItem {
   disabled?: boolean;
 }
 
+/** Transfer 内置文案 */
+export interface TransferMessages {
+  /** 左侧标题默认文案；与 {@link TransferProps.titles}[0] 同义，后者优先 */
+  sourceTitle: string;
+  /** 右侧标题默认文案；与 {@link TransferProps.titles}[1] 同义，后者优先 */
+  targetTitle: string;
+  /** 搜索框默认占位；与 {@link TransferProps.searchPlaceholder} 每项同义，后者优先 */
+  searchPlaceholder: string;
+  /** 列表底部「N 项」文案，参数为过滤后总数 */
+  count: (n: number) => string;
+  /** 列表底部「，已选 N」文案，参数为已选数；要求开头自带分隔符 */
+  selectedSuffix: (n: number) => string;
+  /** 中间向右移动按钮 `aria-label` */
+  moveRight: string;
+  /** 中间向左移动按钮 `aria-label` */
+  moveLeft: string;
+}
+
+/** 默认中文文案 */
+export const defaultTransferMessages: TransferMessages = {
+  sourceTitle: "源列表",
+  targetTitle: "目标列表",
+  searchPlaceholder: "搜索",
+  count: (n) => `${n} 项`,
+  selectedSuffix: (n) => `，已选 ${n}`,
+  moveRight: "右移",
+  moveLeft: "左移",
+};
+
 export interface TransferProps {
   dataSource: TransferItem[];
   targetKeys: MaybeSignal<string[]>;
@@ -33,7 +62,15 @@ export interface TransferProps {
   listStyle?: { width?: number; height?: number };
   disabled?: boolean;
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultTransferMessages} */
+  messages?: Partial<TransferMessages>;
 }
+
+/** 列表底部统计用到的文案字段 */
+type TransferColumnFooterMessages = Pick<
+  TransferMessages,
+  "count" | "selectedSuffix"
+>;
 
 function filterTransferItems(
   items: TransferItem[],
@@ -65,6 +102,8 @@ type TransferColumnProps = {
   onToggleSelect: (key: string) => void;
   onTransfer: (keys: string[]) => void;
   disabled?: boolean;
+  /** 列表底部「N 项 / 已选」文案 */
+  footerMessages: TransferColumnFooterMessages;
 };
 
 /**
@@ -86,6 +125,7 @@ function TransferColumn(props: TransferColumnProps): JSX.Element {
     onToggleSelect,
     onTransfer,
     disabled = false,
+    footerMessages,
   } = props;
 
   listVersion.value;
@@ -161,8 +201,10 @@ function TransferColumn(props: TransferColumnProps): JSX.Element {
             })}
           </ul>
           <div class="px-2 py-1 text-xs text-slate-500 dark:text-slate-400">
-            {filtered.length} 项
-            {selectedKeys.length > 0 && `，已选 ${selectedKeys.length}`}
+            {footerMessages.count(filtered.length)}
+            {selectedKeys.length > 0
+              ? footerMessages.selectedSuffix(selectedKeys.length)
+              : ""}
           </div>
         </div>
       </div>
@@ -178,9 +220,7 @@ export function Transfer(props: TransferProps): JSX.Element | null {
     dataSource,
     targetKeys,
     onChange,
-    titles = ["源列表", "目标列表"],
     showSearch = false,
-    searchPlaceholder = ["搜索", "搜索"],
     searchValue,
     onSearch,
     filterOption,
@@ -188,7 +228,19 @@ export function Transfer(props: TransferProps): JSX.Element | null {
     listStyle = { width: 200, height: 200 },
     disabled = false,
     class: className,
+    messages,
   } = props;
+
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultTransferMessages, ...messages };
+  const titlesResolved: [string, string] = [
+    props.titles?.[0] ?? m.sourceTitle,
+    props.titles?.[1] ?? m.targetTitle,
+  ];
+  const searchPlaceholderResolved: [string, string] = [
+    props.searchPlaceholder?.[0] ?? m.searchPlaceholder,
+    props.searchPlaceholder?.[1] ?? m.searchPlaceholder,
+  ];
 
   const leftSearchRef = useSignal(searchValue?.[0] ?? "");
   const rightSearchRef = useSignal(searchValue?.[1] ?? "");
@@ -243,6 +295,12 @@ export function Transfer(props: TransferProps): JSX.Element | null {
       : [...prev, key];
   };
 
+  /** 左右列列表底部统计共用合并后的 count / selectedSuffix */
+  const columnFooterMessages: TransferColumnFooterMessages = {
+    count: m.count,
+    selectedSuffix: m.selectedSuffix,
+  };
+
   return (
     <div
       class={twMerge(
@@ -252,9 +310,9 @@ export function Transfer(props: TransferProps): JSX.Element | null {
       )}
     >
       <TransferColumn
-        title={titles[0]}
+        title={titlesResolved[0]}
         items={leftRaw}
-        searchPlaceholder={searchPlaceholder[0]}
+        searchPlaceholder={searchPlaceholderResolved[0]}
         showSearch={showSearch}
         searchRef={leftSearchRef}
         listVersion={leftListVersion}
@@ -266,13 +324,14 @@ export function Transfer(props: TransferProps): JSX.Element | null {
         onToggleSelect={toggleLeft}
         onTransfer={(keys) => moveToRight(keys)}
         disabled={disabled}
+        footerMessages={columnFooterMessages}
       />
       <div class="flex shrink-0 flex-col justify-center gap-2">
         <button
           type="button"
           class={btnCls}
           disabled={disabled}
-          aria-label="右移"
+          aria-label={m.moveRight}
           onClick={() => {
             moveToRight(
               leftSelectedKeysRef.value.length > 0
@@ -293,7 +352,7 @@ export function Transfer(props: TransferProps): JSX.Element | null {
           type="button"
           class={btnCls}
           disabled={disabled}
-          aria-label="左移"
+          aria-label={m.moveLeft}
           onClick={() => {
             moveToLeft(
               rightSelectedKeysRef.value.length > 0
@@ -312,9 +371,9 @@ export function Transfer(props: TransferProps): JSX.Element | null {
         </button>
       </div>
       <TransferColumn
-        title={titles[1]}
+        title={titlesResolved[1]}
         items={rightRaw}
-        searchPlaceholder={searchPlaceholder[1]}
+        searchPlaceholder={searchPlaceholderResolved[1]}
         showSearch={showSearch}
         searchRef={rightSearchRef}
         listVersion={rightListVersion}
@@ -326,6 +385,7 @@ export function Transfer(props: TransferProps): JSX.Element | null {
         onToggleSelect={toggleRight}
         onTransfer={(keys) => moveToLeft(keys)}
         disabled={disabled}
+        footerMessages={columnFooterMessages}
       />
     </div>
   );

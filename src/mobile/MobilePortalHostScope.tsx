@@ -86,7 +86,7 @@ export function MobilePortalHostScope(
         }
         <div
           ref={setHostRef}
-          class="pointer-events-none absolute inset-0 z-[120]"
+          class="pointer-events-none absolute inset-0 z-120"
           aria-hidden="true"
           data-dreamer-mobile-portal-host=""
         />

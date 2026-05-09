@@ -10,11 +10,32 @@
 import type { ComponentChildren, JSX } from "preact";
 import { twMerge } from "tailwind-merge";
 import { Button } from "../../shared/basic/Button.tsx";
-import { Modal } from "../../shared/feedback/Modal.tsx";
+import {
+  defaultModalMessages,
+  Modal,
+  type ModalMessages,
+} from "../../shared/feedback/Modal.tsx";
 import type {
   ModalPlacement,
   ModalProps,
 } from "../../shared/feedback/Modal.tsx";
+
+/**
+ * Dialog 内置文案；继承 {@link ModalMessages}（关闭、全屏等），并新增确定/取消默认文案。
+ */
+export interface DialogMessages extends ModalMessages {
+  /** 确定按钮默认文案；与 {@link DialogProps.confirmText} 同义，后者优先（非空时） */
+  confirm: string;
+  /** 取消按钮默认文案；与 {@link DialogProps.cancelText} 同义，后者优先 */
+  cancel: string;
+}
+
+/** 默认中文文案 */
+export const defaultDialogMessages: DialogMessages = {
+  ...defaultModalMessages,
+  confirm: "确定",
+  cancel: "取消",
+};
 
 /**
  * 类系统确认框：小屏左右留白；`actionSheet` 自底部上滑；`default` 为原仅桌面 520 横排。默认定/取为横排，与旧版一致。
@@ -35,7 +56,7 @@ const DIALOG_ALERT_WIDTH = "min(calc(100vw - 2rem), 520px)";
 export interface DialogProps extends
   Omit<
     ModalProps,
-    "footer" | "children"
+    "footer" | "children" | "messages"
   > {
   /** 关闭回调 */
   onClose?: () => void;
@@ -78,6 +99,23 @@ export interface DialogProps extends
   confirmLoading?: boolean;
   /** 是否显示底部（确定/取消）；传 false 则完全不显示 footer */
   showFooter?: boolean;
+  /** 多语言/自定义文案；未传字段走 {@link defaultDialogMessages} */
+  messages?: Partial<DialogMessages>;
+}
+
+/**
+ * 读取确定按钮文案：未传或空串时使用 fallback（与 `@dreamer/ui-view` Dialog 一致）。
+ *
+ * @param v - `confirmText`
+ * @param fallback - 来自合并后的 `messages.confirm`
+ */
+function resolveDialogConfirmText(
+  v: string | undefined,
+  fallback: string,
+): string {
+  if (v === undefined) return fallback;
+  if (v === "") return fallback;
+  return v;
 }
 
 /**
@@ -162,6 +200,12 @@ function buildDialogDefaultFooter(
  * @returns 与 Modal 同路径下的弹层
  */
 export function Dialog(props: DialogProps): JSX.Element {
+  /** 合并 Modal 层文案与 Dialog 确定/取消默认（透传给 {@link Modal}） */
+  const m: DialogMessages = {
+    ...defaultDialogMessages,
+    ...(props.messages ?? {}),
+  };
+
   const {
     open,
     onClose,
@@ -172,8 +216,8 @@ export function Dialog(props: DialogProps): JSX.Element {
     mobileLayout: mobileLayoutIn,
     footer: footerOverride,
     footerClass: footerClassIn,
-    confirmText = "确定",
-    cancelText = "取消",
+    confirmText: confirmTextIn,
+    cancelText: cancelTextIn,
     onConfirm,
     onCancel,
     danger = false,
@@ -184,12 +228,19 @@ export function Dialog(props: DialogProps): JSX.Element {
     class: classIn,
     wrapClass: wrapIn,
     placement: placementIn,
+    messages: _omitDialogMessagesSpread,
     ...restModal
   } = props;
 
   const body: ComponentChildren = content !== undefined ? content : children;
-  const hasCancel = cancelText != null && cancelText !== "";
+  /** `cancelText === null` 表示不显示取消；未传时使用 `m.cancel` */
+  const cancelTextRaw = cancelTextIn !== undefined ? cancelTextIn : m.cancel;
+  const hasCancel = cancelTextRaw != null && cancelTextRaw !== "";
   const hasConfirm = onConfirm != null;
+  const confirmTextResolved = resolveDialogConfirmText(
+    confirmTextIn,
+    m.confirm,
+  );
 
   const layout: DialogMobileLayout = mobileLayoutIn != null
     ? mobileLayoutIn
@@ -225,8 +276,8 @@ export function Dialog(props: DialogProps): JSX.Element {
       hasCancel,
       layout,
       confirmVariant,
-      confirmText,
-      cancelText: cancelText as string,
+      confirmText: confirmTextResolved,
+      cancelText: cancelTextRaw as string,
       confirmLoading,
       onConfirm,
       onCancel,
@@ -250,6 +301,7 @@ export function Dialog(props: DialogProps): JSX.Element {
       wrapClass={wrapIn}
       placement={placement}
       footerClass={footerClassMerged}
+      messages={m}
       {...restModal}
     >
       {body as ComponentChildren}

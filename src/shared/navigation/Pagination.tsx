@@ -10,6 +10,43 @@ import { IconChevronLeft } from "../basic/icons/ChevronLeft.tsx";
 import { IconChevronRight } from "../basic/icons/ChevronRight.tsx";
 import { getPaginationState } from "./pagination-utils.ts";
 
+/**
+ * Pagination 内置文案。函数式项接收上下文（如页码、总数）并返回最终文本，便于多语言/复数处理。
+ */
+export interface PaginationMessages {
+  /** 根 `<nav>` 的 `aria-label` */
+  nav: string;
+  /** 上一页按钮 `aria-label` */
+  prev: string;
+  /** 下一页按钮 `aria-label` */
+  next: string;
+  /** 单个页码按钮 `aria-label`，参数为该页码 */
+  pageLabel: (page: number) => string;
+  /** 每页条数选择器 `aria-label` */
+  pageSize: string;
+  /** 每页条数下拉项文本，参数为条数 */
+  pageSizeUnit: (n: number) => string;
+  /** 快速跳转输入框前的提示文本 */
+  jumpTo: string;
+  /** 快速跳转输入框后的单位文本 */
+  pageUnit: string;
+  /** showTotal=true 时的「共 N 条」默认渲染 */
+  totalText: (total: number) => string;
+}
+
+/** 默认中文文案 */
+export const defaultPaginationMessages: PaginationMessages = {
+  nav: "分页",
+  prev: "上一页",
+  next: "下一页",
+  pageLabel: (p) => `第 ${p} 页`,
+  pageSize: "每页条数",
+  pageSizeUnit: (n) => `${n} 条/页`,
+  jumpTo: "跳至",
+  pageUnit: "页",
+  totalText: (total) => `共 ${total} 条`,
+};
+
 export interface PaginationProps {
   /** 当前页码（受控）；不传则内部 `useSignal` */
   current?: number | (() => number);
@@ -30,6 +67,8 @@ export interface PaginationProps {
   disabled?: boolean;
   syncUrl?: boolean;
   class?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultPaginationMessages} */
+  messages?: Partial<PaginationMessages>;
 }
 
 /** 将当前 URL 的 search 与 page/pageSize 合并后写入 */
@@ -62,7 +101,10 @@ export function Pagination(props: PaginationProps): JSX.Element {
     disabled = false,
     syncUrl = false,
     class: className,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultPaginationMessages, ...messages };
 
   const internalCurrentRef = useSignal(defaultCurrent);
   const internalPageSizeRef = useSignal(defaultPageSize);
@@ -115,14 +157,14 @@ export function Pagination(props: PaginationProps): JSX.Element {
   return (
     <nav
       role="navigation"
-      aria-label="分页"
+      aria-label={m.nav}
       class={twMerge("flex items-center gap-1 flex-wrap", className)}
     >
       {showTotal && total != null && (
         <span class="mr-2 text-sm text-slate-600 dark:text-slate-400 shrink-0">
           {typeof showTotal === "function"
             ? showTotal(total, [from, to])
-            : `共 ${total} 条`}
+            : m.totalText(total)}
         </span>
       )}
       {showPrevNext && (
@@ -130,7 +172,7 @@ export function Pagination(props: PaginationProps): JSX.Element {
           type="button"
           class={twMerge(btnCls, "shrink-0")}
           disabled={disabled || !canPrev}
-          aria-label="上一页"
+          aria-label={m.prev}
           onClick={() => onChange(safeCurrent - 1)}
         >
           <IconChevronLeft class="w-4 h-4" />
@@ -153,7 +195,7 @@ export function Pagination(props: PaginationProps): JSX.Element {
                 type="button"
                 class={twMerge(btnCls, safeCurrent === p && activeCls)}
                 disabled={disabled}
-                aria-label={`第 ${p} 页`}
+                aria-label={m.pageLabel(p)}
                 aria-current={safeCurrent === p ? "page" : undefined}
                 onClick={() => onChange(p)}
               >
@@ -166,7 +208,7 @@ export function Pagination(props: PaginationProps): JSX.Element {
           type="button"
           class={twMerge(btnCls, "shrink-0")}
           disabled={disabled || !canNext}
-          aria-label="下一页"
+          aria-label={m.next}
           onClick={() => onChange(safeCurrent + 1)}
         >
           <IconChevronRight class="w-4 h-4" />
@@ -186,11 +228,11 @@ export function Pagination(props: PaginationProps): JSX.Element {
                 );
                 if (!Number.isNaN(v)) onChange(1, v);
               }}
-              aria-label="每页条数"
+              aria-label={m.pageSize}
             >
               {pageSizeOptions.map((n) => (
                 <option key={n} value={n}>
-                  {n} 条/页
+                  {m.pageSizeUnit(n)}
                 </option>
               ))}
             </select>
@@ -198,7 +240,7 @@ export function Pagination(props: PaginationProps): JSX.Element {
         )}
       {showQuickJumper && (
         <span class="ml-2 inline-flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400">
-          跳至
+          {m.jumpTo}
           <input
             type="number"
             min={1}
@@ -225,7 +267,7 @@ export function Pagination(props: PaginationProps): JSX.Element {
               }
             }}
           />
-          页
+          {m.pageUnit}
         </span>
       )}
     </nav>

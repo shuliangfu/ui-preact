@@ -15,6 +15,7 @@ import {
   nativeSelectSurface,
   pickerTriggerSurface,
 } from "./input-focus-ring.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import {
   commitMaybeSignal,
   type MaybeSignal,
@@ -31,6 +32,20 @@ export interface TreeSelectOption {
   children?: TreeSelectOption[];
 }
 
+/** TreeSelect 内置文案 */
+export interface TreeSelectMessages {
+  placeholder: string;
+  triggerFallback: string;
+  listbox: string;
+}
+
+/** 默认中文文案 */
+export const defaultTreeSelectMessages: TreeSelectMessages = {
+  placeholder: "请选择",
+  triggerFallback: "树形选择",
+  listbox: "树形选项",
+};
+
 export interface TreeSelectProps {
   options: TreeSelectOption[];
   /** 当前选中节点的 value；见 {@link MaybeSignal} */
@@ -46,6 +61,8 @@ export interface TreeSelectProps {
   hideFocusRing?: boolean;
   /** `native` 时用原生 select + 大触控区，选项文案为展平后的完整路径 */
   appearance?: TreeSelectAppearance;
+  /** 多语言/自定义文案；未传字段走 {@link defaultTreeSelectMessages} */
+  messages?: Partial<TreeSelectMessages>;
 }
 
 /** 展平后的每一项：下拉里用 nodeLabel + depth，触发条用 fullPath */
@@ -112,17 +129,21 @@ function TreeSelectNativeBranch(
 ): JSX.Element {
   const {
     options,
-    size = "md",
+    size: sizeProp,
     disabled = false,
     onChange,
-    placeholder = "请选择",
     class: className,
     name,
     id,
     hideFocusRing = false,
     value,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultTreeSelectMessages, ...messages };
+  const placeholder = props.placeholder ?? m.placeholder;
   const flat = flattenTreeSelectOptions(options);
+  const size = resolveFormControlSize(sizeProp);
   const sizeCls = sizeClassesNative[size];
   const resolvedValue = readMaybeSignal(value) ?? "";
 
@@ -168,16 +189,20 @@ function TreeSelectDropdownBranch(
 ): JSX.Element {
   const {
     options,
-    size = "md",
+    size: sizeProp,
     disabled = false,
     onChange,
-    placeholder = "请选择",
     class: className,
     name,
     id,
     hideFocusRing = false,
     value,
+    messages,
   } = props;
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultTreeSelectMessages, ...messages };
+  const placeholder = props.placeholder ?? m.placeholder;
+  const size = resolveFormControlSize(sizeProp);
 
   const openState = useSignal(false);
   const sizeCls = sizeClassesDropdown[size];
@@ -216,7 +241,7 @@ function TreeSelectDropdownBranch(
   const selectedOption = flat.find((o) => o.value === rv);
   /** 无障碍标签：有选中项用完整路径，否则占位或默认文案 */
   const ariaLabelText = (selectedOption?.fullPath ?? placeholder) ||
-    "树形选择";
+    m.triggerFallback;
 
   return (
     <span class={twMerge("relative block w-full min-w-0", className)}>
@@ -268,7 +293,7 @@ function TreeSelectDropdownBranch(
           <div
             key="treeselect-dd-list"
             role="listbox"
-            aria-label="树形选项"
+            aria-label={m.listbox}
             class="absolute z-50 top-full left-0 right-0 mt-1 max-h-60 overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-800"
           >
             <button

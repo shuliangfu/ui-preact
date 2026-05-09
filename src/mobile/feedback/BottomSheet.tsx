@@ -37,7 +37,23 @@ export interface BottomSheetProps {
   panelClass?: string;
   /** 子内容 */
   children?: ComponentChildren;
+  /** 多语言/自定义文案；未传字段走 {@link defaultBottomSheetMessages} */
+  messages?: Partial<BottomSheetMessages>;
 }
+
+/** BottomSheet 内置文案 */
+export interface BottomSheetMessages {
+  /** 标题栏右侧关闭按钮文本 */
+  close: string;
+  /** 遮罩按钮 `aria-label` */
+  closeAriaLabel: string;
+}
+
+/** 默认中文文案 */
+export const defaultBottomSheetMessages: BottomSheetMessages = {
+  close: "关闭",
+  closeAriaLabel: "关闭",
+};
 
 const Z_INDEX = 300;
 
@@ -87,6 +103,11 @@ function trySetDocumentBodyOverflow(overflow: string): void {
  */
 export function BottomSheet(props: BottomSheetProps): JSX.Element | null {
   const destroyOnClose = props.destroyOnClose === true;
+  /** 合并默认中文文案与外部传入 messages */
+  const m: BottomSheetMessages = {
+    ...defaultBottomSheetMessages,
+    ...(props.messages ?? {}),
+  };
 
   /**
    * 机内 Portal：须用对象 `{ getHost }` 传 Context，勿传裸函数（见 {@link ../MobilePortalHostScope.tsx}）。
@@ -171,7 +192,7 @@ export function BottomSheet(props: BottomSheetProps): JSX.Element | null {
       <button
         type="button"
         class="absolute inset-0 bg-black/45 border-0 cursor-default"
-        aria-label="关闭"
+        aria-label={m.closeAriaLabel}
         onClick={handleMask}
       />
       <div
@@ -197,7 +218,7 @@ export function BottomSheet(props: BottomSheetProps): JSX.Element | null {
                 class="text-sm text-black/45 hover:text-black/75 px-2 py-1 rounded-md"
                 onClick={() => props.onClose?.()}
               >
-                关闭
+                {m.close}
               </button>
             </div>
           )

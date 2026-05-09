@@ -53,6 +53,224 @@ export interface ToolbarItem {
 export type ToolbarConfig = ToolbarItem[][] | ToolbarItem[];
 
 /**
+ * RichTextEditor 全部用户可见文案；通过 {@link RichTextEditorProps.messages} 覆盖即可本地化。
+ * 注：自定义 `toolbar` 时，`title`/`label` 由调用方自行决定，本对象只覆盖预设工具栏（simple/default/full）的文案。
+ */
+export interface RichTextEditorMessages {
+  /** 编辑区空内容占位 */
+  placeholder: string;
+  /** 工具栏 `aria-label` */
+  toolbarAriaLabel: string;
+  /** 源码 textarea `aria-label` */
+  sourceTextareaAriaLabel: string;
+  /** 页脚字数行 */
+  wordCount: (count: number) => string;
+  /** 工具栏切换至源码模式后的工具按钮 tooltip / aria */
+  sourceReturn: string;
+  /** 工具栏全屏模式启用后的工具按钮 tooltip / aria */
+  fullscreenExit: string;
+  /** 链接占位锚文（折叠选区下插入的可见文本） */
+  linkText: string;
+  /** 打印窗口标题 */
+  printTitle: string;
+  /** 查找未找到提示 */
+  notFound: string;
+  /** 查找/替换条 */
+  findbar: {
+    findPlaceholder: string;
+    replacePlaceholder: string;
+    findButton: string;
+    replaceButton: string;
+    replaceAllButton: string;
+    findNextTip: string;
+    replaceCurrentTip: string;
+    replaceAllTip: string;
+  };
+  /** 链接弹层 */
+  linkModal: {
+    title: string;
+    urlLabel: string;
+    confirm: string;
+    cancel: string;
+  };
+  /** 图片 URL 弹层 */
+  imageModal: { title: string; urlLabel: string };
+  /** 表格弹层（无表头 / 含表头） */
+  tableModal: {
+    plainTitle: string;
+    headerTitle: string;
+    rowsLabel: string;
+    headerRowsLabel: string;
+    colsLabel: string;
+  };
+  /** 导出弹层 */
+  exportModal: {
+    title: string;
+    exportHtml: string;
+    exportText: string;
+    cancel: string;
+    hint: string;
+  };
+  /** 快捷键说明弹层 */
+  shortcutsModal: { title: string; ok: string; body: string };
+  /** 通用提示弹层 */
+  infoModal: { title: string; ok: string };
+  /** 通用按钮 */
+  confirm: string;
+  cancel: string;
+  /** 工具栏按钮标题（与 ToolbarItem.key 同名） */
+  toolbar: {
+    sourceHtml: string;
+    undo: string;
+    redo: string;
+    bold: string;
+    italic: string;
+    underline: string;
+    link: string;
+    heading: string;
+    headingIconLabel: string;
+    fontSize: string;
+    lineHeight: string;
+    foreColor: string;
+    backColor: string;
+    removeFormat: string;
+    blockquote: string;
+    ul: string;
+    ol: string;
+    strike: string;
+    code: string;
+    insertCodeBlock: string;
+    insertImage: string;
+    uploadImage: string;
+    insertTable: string;
+    justifyLeft: string;
+    justifyCenter: string;
+    justifyRight: string;
+    hr: string;
+    insertSpecialChar: string;
+    insertTableWithHeader: string;
+    sup: string;
+    sub: string;
+    indent: string;
+    fullscreen: string;
+    find: string;
+    replace: string;
+    print: string;
+    export: string;
+    shortcuts: string;
+  };
+  /** 段落 / 标题下拉文案 */
+  blockLabels: { p: string; h2: string; h3: string; h4: string };
+  /** 特殊字符下拉项标签 */
+  specialChars: {
+    nbsp: string;
+    smile: string;
+    thumb: string;
+    heart: string;
+  };
+}
+
+/** 默认中文文案 */
+export const defaultRichTextEditorMessages: RichTextEditorMessages = {
+  placeholder: "输入内容…",
+  toolbarAriaLabel: "编辑工具栏",
+  sourceTextareaAriaLabel: "HTML 源码",
+  wordCount: (count) => `字数：${count}`,
+  sourceReturn: "返回可视化编辑",
+  fullscreenExit: "退出全屏",
+  linkText: "链接",
+  printTitle: "打印",
+  notFound: "未找到",
+  findbar: {
+    findPlaceholder: "查找",
+    replacePlaceholder: "替换为",
+    findButton: "查找",
+    replaceButton: "替换",
+    replaceAllButton: "全部替换",
+    findNextTip: "查找下一处匹配",
+    replaceCurrentTip: "替换当前匹配项",
+    replaceAllTip: "替换文档内全部匹配项",
+  },
+  linkModal: {
+    title: "插入链接",
+    urlLabel: "链接 URL",
+    confirm: "确定",
+    cancel: "取消",
+  },
+  imageModal: { title: "插入图片", urlLabel: "图片 URL" },
+  tableModal: {
+    plainTitle: "插入表格",
+    headerTitle: "插入表格（含表头）",
+    rowsLabel: "行数",
+    headerRowsLabel: "行数（含表头）",
+    colsLabel: "列数",
+  },
+  exportModal: {
+    title: "导出内容",
+    exportHtml: "导出 HTML",
+    exportText: "导出纯文本",
+    cancel: "取消",
+    hint: "选择导出格式：HTML 保留标签与样式线索；纯文本仅保留可见文字。",
+  },
+  shortcutsModal: {
+    title: "快捷键",
+    ok: "知道了",
+    body:
+      "快捷键：\nCtrl+Z 撤销\nCtrl+Y 重做\nCtrl+B 加粗\nCtrl+I 斜体\nCtrl+U 下划线\nCtrl+K 插入链接\nCtrl+F 查找\n工具栏「编辑源码」可切换 HTML 源码与可视化",
+  },
+  infoModal: { title: "提示", ok: "确定" },
+  confirm: "确定",
+  cancel: "取消",
+  toolbar: {
+    sourceHtml: "编辑源码",
+    undo: "撤销 (Ctrl+Z)",
+    redo: "重做 (Ctrl+Y)",
+    bold: "加粗 (Ctrl+B)",
+    italic: "斜体 (Ctrl+I)",
+    underline: "下划线 (Ctrl+U)",
+    link: "插入链接 (Ctrl+K)",
+    heading: "段落与标题",
+    headingIconLabel: "段落",
+    fontSize: "字号",
+    lineHeight: "行高",
+    foreColor: "文字颜色",
+    backColor: "背景色",
+    removeFormat: "清除格式",
+    blockquote: "引用",
+    ul: "无序列表",
+    ol: "有序列表",
+    strike: "删除线",
+    code: "行内代码",
+    insertCodeBlock: "代码块(可高亮)",
+    insertImage: "插入图片 URL",
+    uploadImage: "上传图片",
+    insertTable: "插入表格",
+    justifyLeft: "左对齐",
+    justifyCenter: "居中",
+    justifyRight: "右对齐",
+    hr: "水平线",
+    insertSpecialChar: "特殊字符",
+    insertTableWithHeader: "插入表格(含表头)",
+    sup: "上标",
+    sub: "下标",
+    indent: "首行缩进",
+    fullscreen: "全屏",
+    find: "查找 (Ctrl+F)",
+    replace: "替换",
+    print: "打印",
+    export: "导出",
+    shortcuts: "快捷键帮助",
+  },
+  blockLabels: { p: "正文", h2: "标题 2", h3: "标题 3", h4: "标题 4" },
+  specialChars: {
+    nbsp: "空格",
+    smile: "表情 😀",
+    thumb: "赞 👍",
+    heart: "心形 ❤",
+  },
+};
+
+/**
  * 工具栏与查找条悬停说明：使用 {@link Tooltip} 统一气泡样式；**不再**写原生 `title`，避免与自定义气泡叠两层。
  * Tooltip 气泡默认经 Portal 挂到 `document.body` 且 `fixed` 定位，避免工具栏 `overflow` 裁切；全屏根节点为 `z-9999` 时可用 `overlayClass` 抬高 z-index（如 `z-10050`）。
  *
@@ -87,147 +305,116 @@ function RteToolbarItemTip(props: {
 }
 
 /**
- * 可视化 ↔ HTML 源码切换；须排在撤销之前，便于先切源码再编辑。
+ * 根据预设与 {@link RichTextEditorMessages} 的工具栏文案返回工具栏分组。
+ * 各 `title` 全部从 `messages.toolbar` 取值，便于本地化覆盖；自定义 `toolbar` 不走此函数。
+ *
+ * @param preset - simple / default / full
+ * @param messages - 合并后的文案（含 toolbar、blockLabels、specialChars）
  */
-const RTE_TOOLBAR_SOURCE_ITEM: ToolbarItem = {
-  key: "sourceHtml",
-  title: "编辑源码",
-  command: "rteToggleSourceHtml",
-  icon: "HTML",
-};
-
-/** 第一行：源码切换、撤销/重做与常用内联格式、链接（各预设共用） */
-const RTE_TOOLBAR_ROW_BASIC: ToolbarItem[] = [
-  RTE_TOOLBAR_SOURCE_ITEM,
-  { key: "undo", title: "撤销 (Ctrl+Z)", command: "undo", icon: "↶" },
-  { key: "redo", title: "重做 (Ctrl+Y)", command: "redo", icon: "↷" },
-  { key: "bold", title: "加粗 (Ctrl+B)", command: "bold", icon: "B" },
-  { key: "italic", title: "斜体 (Ctrl+I)", command: "italic", icon: "I" },
-  {
-    key: "underline",
-    title: "下划线 (Ctrl+U)",
-    command: "underline",
-    icon: "U",
-  },
-  {
-    key: "link",
-    title: "插入链接 (Ctrl+K)",
-    command: "createLink",
-    value: "",
-  },
-];
-
-/** 段落与标题（formatBlock）；左侧由工具栏渲染 {@link IconType}，此处保留文案供自定义工具栏回退 */
-const RTE_TOOLBAR_HEADING_ITEM: ToolbarItem = {
-  key: "heading",
-  title: "段落与标题",
-  command: "formatBlock",
-  value: "p",
-  icon: "段落",
-  children: [
-    { value: "p", label: "正文" },
-    { value: "h2", label: "标题 2" },
-    { value: "h3", label: "标题 3" },
-    { value: "h4", label: "标题 4" },
-  ],
-};
-
-/** 字号（自定义 `rteFontSize`，DOM 包 `span` + `data-rte-font-size`） */
-const RTE_TOOLBAR_FONT_SIZE_ITEM: ToolbarItem = {
-  key: "fontSize",
-  title: "字号",
-  command: "rteFontSize",
-  value: "16px",
-  children: [
-    { value: "12px", label: "12px" },
-    { value: "14px", label: "14px" },
-    { value: "16px", label: "16px" },
-    { value: "18px", label: "18px" },
-    { value: "20px", label: "20px" },
-    { value: "24px", label: "24px" },
-    { value: "28px", label: "28px" },
-  ],
-};
-
-/** 行高（自定义 `rteLineHeight`，作用于当前块级容器） */
-const RTE_TOOLBAR_LINE_HEIGHT_ITEM: ToolbarItem = {
-  key: "lineHeight",
-  title: "行高",
-  command: "rteLineHeight",
-  value: "1.5",
-  children: [
-    { value: "1.25", label: "1.25" },
-    { value: "1.5", label: "1.5" },
-    { value: "1.75", label: "1.75" },
-    { value: "2", label: "2" },
-    { value: "2.5", label: "2.5" },
-  ],
-};
-
-/** 第二行：段落标题、字号、行高（simple / default / full 共用） */
-const RTE_TOOLBAR_ROW_TYPOGRAPHY: ToolbarItem[] = [
-  RTE_TOOLBAR_HEADING_ITEM,
-  RTE_TOOLBAR_FONT_SIZE_ITEM,
-  RTE_TOOLBAR_LINE_HEIGHT_ITEM,
-];
-
-/**
- * 文字颜色与背景色（各预设均展示，与 {@link ColorPicker}、`foreColor`/`backColor` 命令联动）。
- */
-const RTE_TOOLBAR_ROW_COLORS: ToolbarItem[] = [
-  {
-    key: "foreColor",
-    title: "文字颜色",
-    command: "foreColor",
-    value: "#000000",
-    icon: "A",
-  },
-  {
-    key: "backColor",
-    title: "背景色",
-    command: "backColor",
-    value: "#ffff00",
-  },
-];
-
-/** 根据预设返回工具栏分组 */
-function getToolbarByPreset(preset: ToolbarPreset): ToolbarItem[][] {
-  const simple: ToolbarItem[][] = [
-    RTE_TOOLBAR_ROW_BASIC,
-    RTE_TOOLBAR_ROW_TYPOGRAPHY,
-    RTE_TOOLBAR_ROW_COLORS,
+function getToolbarByPreset(
+  preset: ToolbarPreset,
+  messages: RichTextEditorMessages,
+): ToolbarItem[][] {
+  const t = messages.toolbar;
+  const sourceItem: ToolbarItem = {
+    key: "sourceHtml",
+    title: t.sourceHtml,
+    command: "rteToggleSourceHtml",
+    icon: "HTML",
+  };
+  const rowBasic: ToolbarItem[] = [
+    sourceItem,
+    { key: "undo", title: t.undo, command: "undo", icon: "↶" },
+    { key: "redo", title: t.redo, command: "redo", icon: "↷" },
+    { key: "bold", title: t.bold, command: "bold", icon: "B" },
+    { key: "italic", title: t.italic, command: "italic", icon: "I" },
+    { key: "underline", title: t.underline, command: "underline", icon: "U" },
+    { key: "link", title: t.link, command: "createLink", value: "" },
+  ];
+  const headingItem: ToolbarItem = {
+    key: "heading",
+    title: t.heading,
+    command: "formatBlock",
+    value: "p",
+    icon: t.headingIconLabel,
+    children: [
+      { value: "p", label: messages.blockLabels.p },
+      { value: "h2", label: messages.blockLabels.h2 },
+      { value: "h3", label: messages.blockLabels.h3 },
+      { value: "h4", label: messages.blockLabels.h4 },
+    ],
+  };
+  const fontSizeItem: ToolbarItem = {
+    key: "fontSize",
+    title: t.fontSize,
+    command: "rteFontSize",
+    value: "16px",
+    children: [
+      { value: "12px", label: "12px" },
+      { value: "14px", label: "14px" },
+      { value: "16px", label: "16px" },
+      { value: "18px", label: "18px" },
+      { value: "20px", label: "20px" },
+      { value: "24px", label: "24px" },
+      { value: "28px", label: "28px" },
+    ],
+  };
+  const lineHeightItem: ToolbarItem = {
+    key: "lineHeight",
+    title: t.lineHeight,
+    command: "rteLineHeight",
+    value: "1.5",
+    children: [
+      { value: "1.25", label: "1.25" },
+      { value: "1.5", label: "1.5" },
+      { value: "1.75", label: "1.75" },
+      { value: "2", label: "2" },
+      { value: "2.5", label: "2.5" },
+    ],
+  };
+  const rowTypography: ToolbarItem[] = [
+    headingItem,
+    fontSizeItem,
+    lineHeightItem,
+  ];
+  const rowColors: ToolbarItem[] = [
+    {
+      key: "foreColor",
+      title: t.foreColor,
+      command: "foreColor",
+      value: "#000000",
+      icon: "A",
+    },
+    {
+      key: "backColor",
+      title: t.backColor,
+      command: "backColor",
+      value: "#ffff00",
+    },
   ];
 
+  const simple: ToolbarItem[][] = [rowBasic, rowTypography, rowColors];
+
   const defaultPreset: ToolbarItem[][] = [
-    RTE_TOOLBAR_ROW_BASIC,
-    RTE_TOOLBAR_ROW_TYPOGRAPHY,
+    rowBasic,
+    rowTypography,
     [
       {
         key: "removeFormat",
-        title: "清除格式",
+        title: t.removeFormat,
         command: "removeFormat",
         icon: "✕",
       },
       {
         key: "blockquote",
-        title: "引用",
+        title: t.blockquote,
         command: "formatBlock",
         value: "blockquote",
       },
-      {
-        key: "ul",
-        title: "无序列表",
-        command: "insertUnorderedList",
-        icon: "•",
-      },
-      {
-        key: "ol",
-        title: "有序列表",
-        command: "insertOrderedList",
-        icon: "1.",
-      },
+      { key: "ul", title: t.ul, command: "insertUnorderedList", icon: "•" },
+      { key: "ol", title: t.ol, command: "insertOrderedList", icon: "1." },
     ],
-    RTE_TOOLBAR_ROW_COLORS,
+    rowColors,
   ];
 
   const full: ToolbarItem[][] = [
@@ -235,74 +422,74 @@ function getToolbarByPreset(preset: ToolbarPreset): ToolbarItem[][] {
     [
       {
         key: "strike",
-        title: "删除线",
+        title: t.strike,
         command: "strikeThrough",
         /** 预设工具栏由 `renderToolbarButtonContent` 的 `strike` 分支绘制 SVG；保留字符供自定义回退 */
         icon: "S̲",
       },
       {
         key: "code",
-        title: "行内代码",
+        title: t.code,
         command: "formatBlock",
         value: "pre",
         icon: "</>",
       },
       {
         key: "insertCodeBlock",
-        title: "代码块(可高亮)",
+        title: t.insertCodeBlock,
         command: "insertCodeBlock",
         icon: "{ }",
       },
       {
         key: "insertImage",
-        title: "插入图片 URL",
+        title: t.insertImage,
         command: "insertImage",
         value: "",
       },
       {
         key: "uploadImage",
-        title: "上传图片",
+        title: t.uploadImage,
         command: "uploadImage",
         value: "",
       },
       {
         key: "insertTable",
-        title: "插入表格",
+        title: t.insertTable,
         command: "insertTable",
         value: "",
         icon: "▦",
       },
       {
         key: "justifyLeft",
-        title: "左对齐",
+        title: t.justifyLeft,
         command: "justifyLeft",
         icon: "≡",
       },
       {
         key: "justifyCenter",
-        title: "居中",
+        title: t.justifyCenter,
         command: "justifyCenter",
         icon: "≡",
       },
       {
         key: "justifyRight",
-        title: "右对齐",
+        title: t.justifyRight,
         command: "justifyRight",
         icon: "≡",
       },
       {
         key: "hr",
-        title: "水平线",
+        title: t.hr,
         command: "insertHorizontalRule",
         icon: "—",
       },
       {
         key: "insertSpecialChar",
-        title: "特殊字符",
+        title: t.insertSpecialChar,
         command: "insertSpecialChar",
         icon: "Ω",
         children: [
-          { value: "&nbsp;", label: "空格" },
+          { value: "&nbsp;", label: messages.specialChars.nbsp },
           { value: "©", label: "©" },
           { value: "®", label: "®" },
           { value: "™", label: "™" },
@@ -313,39 +500,39 @@ function getToolbarByPreset(preset: ToolbarPreset): ToolbarItem[][] {
           { value: "—", label: "—" },
           { value: "“", label: "“" },
           { value: '"', label: '"' },
-          { value: "😀", label: "表情 😀" },
-          { value: "👍", label: "赞 👍" },
-          { value: "❤", label: "心形 ❤" },
+          { value: "😀", label: messages.specialChars.smile },
+          { value: "👍", label: messages.specialChars.thumb },
+          { value: "❤", label: messages.specialChars.heart },
         ],
       },
       {
         key: "insertTableWithHeader",
-        title: "插入表格(含表头)",
+        title: t.insertTableWithHeader,
         command: "insertTableWithHeader",
         icon: "▦H",
       },
-      { key: "sup", title: "上标", command: "superscript", icon: "x²" },
-      { key: "sub", title: "下标", command: "subscript", icon: "x₂" },
+      { key: "sup", title: t.sup, command: "superscript", icon: "x²" },
+      { key: "sub", title: t.sub, command: "subscript", icon: "x₂" },
       {
         key: "indent",
-        title: "首行缩进",
+        title: t.indent,
         command: "indentFirstLine",
         icon: "¶",
       },
       {
         key: "fullscreen",
-        title: "全屏",
+        title: t.fullscreen,
         command: "fullscreen",
         /** 图标由 `renderToolbarButtonContent` 的 `fullscreen` 分支绘制（全屏后切换为退出形） */
         icon: "⛶",
       },
-      { key: "find", title: "查找 (Ctrl+F)", command: "find" },
-      { key: "replace", title: "替换", command: "replace" },
-      { key: "print", title: "打印", command: "print" },
-      { key: "export", title: "导出", command: "exportContent" },
+      { key: "find", title: t.find, command: "find" },
+      { key: "replace", title: t.replace, command: "replace" },
+      { key: "print", title: t.print, command: "print" },
+      { key: "export", title: t.export, command: "exportContent" },
       {
         key: "shortcuts",
-        title: "快捷键帮助",
+        title: t.shortcuts,
         command: "shortcuts",
         icon: "?",
       },
@@ -590,18 +777,20 @@ function restoreEditorSelectionRange(
 }
 
 /**
- * 折叠光标处插入可见文案为「链接」、`href` 为 `url` 的锚点（不把 URL 写进正文）。
+ * 折叠光标处插入可见文案为 `linkText`、`href` 为 `url` 的锚点（不把 URL 写进正文）。
  *
  * @param editor - contenteditable 根
  * @param url - 链接地址
+ * @param linkText - 锚点的可见文案（来自 {@link RichTextEditorMessages.linkText}）
  */
 function rteInsertLinkPlaceholderAtCaret(
   editor: HTMLElement,
   url: string,
+  linkText: string,
 ): void {
   const a = document.createElement("a");
   a.href = url;
-  a.textContent = "链接";
+  a.textContent = linkText;
   const sel = document.getSelection();
   if (sel != null && sel.rangeCount > 0) {
     const cr = sel.getRangeAt(0);
@@ -617,7 +806,16 @@ function rteInsertLinkPlaceholderAtCaret(
   }
   try {
     const safe = url.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-    document.execCommand("insertHTML", false, `<a href="${safe}">链接</a>`);
+    /** 锚文需经 HTML 转义，避免 messages.linkText 含 `<` 等字符破坏插入 */
+    const safeText = linkText
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    document.execCommand(
+      "insertHTML",
+      false,
+      `<a href="${safe}">${safeText}</a>`,
+    );
   } catch {
     /* ignore */
   }
@@ -625,16 +823,18 @@ function rteInsertLinkPlaceholderAtCaret(
 
 /**
  * 应用超链接：有非空选区时用 `createLink`（锚文本为选中文字，URL 仅作 `href`）；
- * 折叠或无选区时在光标插入「链接」二字锚点，避免浏览器把 URL 当可见正文插入。
+ * 折叠或无选区时在光标插入 `linkText` 文案的锚点，避免浏览器把 URL 当可见正文插入。
  *
  * @param editor - contenteditable 根
  * @param url - 用户输入的 URL
  * @param savedRange - 打开链接弹层前克隆的选区，可为 `null`
+ * @param linkText - 折叠选区下插入锚点的可见文案
  */
 function rteApplyLinkUrl(
   editor: HTMLElement,
   url: string,
   savedRange: Range | null,
+  linkText: string,
 ): void {
   const u = url.trim();
   if (!u) return;
@@ -643,12 +843,12 @@ function rteApplyLinkUrl(
 
   const sel = document.getSelection();
   if (!sel || sel.rangeCount === 0) {
-    rteInsertLinkPlaceholderAtCaret(editor, u);
+    rteInsertLinkPlaceholderAtCaret(editor, u, linkText);
     return;
   }
   const r = sel.getRangeAt(0);
   if (!editor.contains(r.commonAncestorContainer)) {
-    rteInsertLinkPlaceholderAtCaret(editor, u);
+    rteInsertLinkPlaceholderAtCaret(editor, u, linkText);
     return;
   }
   const hasText = !r.collapsed && (r.toString() ?? "").length > 0;
@@ -656,7 +856,7 @@ function rteApplyLinkUrl(
     document.execCommand("createLink", false, u);
     return;
   }
-  rteInsertLinkPlaceholderAtCaret(editor, u);
+  rteInsertLinkPlaceholderAtCaret(editor, u, linkText);
 }
 
 /**
@@ -1971,6 +2171,8 @@ export interface RichTextEditorProps {
   onPasteImage?: (blob: Blob) => Promise<string> | string;
   /** 为 true 时隐藏编辑区、工具栏与查找条控件的聚焦激活态边框；默认 false 显示 */
   hideFocusRing?: boolean;
+  /** 多语言/自定义文案；未传字段走 {@link defaultRichTextEditorMessages} */
+  messages?: Partial<RichTextEditorMessages>;
 }
 
 const toolbarWrapCls =
@@ -1979,7 +2181,7 @@ const toolbarGroupCls =
   "flex items-center gap-0.5 border-r border-slate-200 dark:border-slate-600 pr-1 last:border-r-0 last:pr-0";
 /** 工具栏按钮底纹（不含聚焦 ring，由 {@link controlBlueFocusRing} 控制） */
 const toolbarBtnBase =
-  "inline-flex items-center justify-center p-1.5 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-slate-100 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed min-w-[28px] min-h-[28px] text-sm font-medium";
+  "inline-flex items-center justify-center p-1.5 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-slate-100 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed min-w-[28px] min-h-[28px] text-sm font-medium";
 
 /**
  * 整表禁用或源码模式下（除「源码切换」外）下拉不可用；段落下拉外层 `div` 无 `disabled`，须单独套灰度与弱色字。
@@ -2012,10 +2214,6 @@ const toolbarHistoryMutedCls =
  */
 const rteToolbarSelectFitCls =
   "text-left [field-sizing:content] w-max min-w-0 max-w-[min(100%,14rem)]";
-
-/** 快捷键说明（工具栏「快捷键」与 {@link RTE_AUX_SHORTCUTS} Modal 共用） */
-const RTE_SHORTCUTS_HELP_TEXT =
-  "快捷键：\nCtrl+Z 撤销\nCtrl+Y 重做\nCtrl+B 加粗\nCtrl+I 斜体\nCtrl+U 下划线\nCtrl+K 插入链接\nCtrl+F 查找\n工具栏「编辑源码」可切换 HTML 源码与可视化";
 
 /**
  * 无表头表格 HTML（与历史 `insertTable` 行内样式一致）。
@@ -2124,20 +2322,66 @@ function isHistoryToolbarDisabled(
  * 内层不设 `focus:border-transparent`：`border-0` 下边色类无视觉效果，且 `hideFocusRing` 仅作用于根与工具栏控件的 ring，不依赖此处类名。
  */
 const editorSurface =
-  "w-full min-h-[120px] px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border-0 focus:outline-none overflow-auto [&_p]:mb-2 [&_p]:mt-0 [&_p:last-child]:mb-0 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:bg-slate-100 [&_pre]:dark:bg-slate-700 [&_pre]:p-2 [&_pre]:rounded [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:dark:bg-slate-700 [&_th]:p-2 [&_td]:border [&_td]:border-slate-300 [&_td]:p-2";
+  "w-full min-h-[120px] px-3 py-2 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border-0 focus:outline-hidden overflow-auto [&_p]:mb-2 [&_p]:mt-0 [&_p:last-child]:mb-0 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:bg-slate-100 [&_pre]:dark:bg-slate-700 [&_pre]:p-2 [&_pre]:rounded [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:dark:bg-slate-700 [&_th]:p-2 [&_td]:border [&_td]:border-slate-300 [&_td]:p-2";
 
 /** 查找条内小型文本框底纹（不含 ring） */
 const findBarInputSurface =
-  "px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-800 focus:outline-none";
+  "px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-800 focus:outline-hidden";
 const editorReadOnlyCls = "cursor-default bg-slate-50 dark:bg-slate-800/80";
 
 export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
+  /** 合并默认中文文案与外部传入 messages；嵌套对象同样深合并一层，避免子对象整段覆盖 */
+  const userMessages = props.messages ?? {};
+  const m: RichTextEditorMessages = {
+    ...defaultRichTextEditorMessages,
+    ...userMessages,
+    findbar: {
+      ...defaultRichTextEditorMessages.findbar,
+      ...(userMessages.findbar ?? {}),
+    },
+    linkModal: {
+      ...defaultRichTextEditorMessages.linkModal,
+      ...(userMessages.linkModal ?? {}),
+    },
+    imageModal: {
+      ...defaultRichTextEditorMessages.imageModal,
+      ...(userMessages.imageModal ?? {}),
+    },
+    tableModal: {
+      ...defaultRichTextEditorMessages.tableModal,
+      ...(userMessages.tableModal ?? {}),
+    },
+    exportModal: {
+      ...defaultRichTextEditorMessages.exportModal,
+      ...(userMessages.exportModal ?? {}),
+    },
+    shortcutsModal: {
+      ...defaultRichTextEditorMessages.shortcutsModal,
+      ...(userMessages.shortcutsModal ?? {}),
+    },
+    infoModal: {
+      ...defaultRichTextEditorMessages.infoModal,
+      ...(userMessages.infoModal ?? {}),
+    },
+    toolbar: {
+      ...defaultRichTextEditorMessages.toolbar,
+      ...(userMessages.toolbar ?? {}),
+    },
+    blockLabels: {
+      ...defaultRichTextEditorMessages.blockLabels,
+      ...(userMessages.blockLabels ?? {}),
+    },
+    specialChars: {
+      ...defaultRichTextEditorMessages.specialChars,
+      ...(userMessages.specialChars ?? {}),
+    },
+  };
   const {
     value = "",
     onChange,
     toolbarPreset = "default",
     toolbar: customToolbar,
-    placeholder = "输入内容…",
+    placeholder = m.placeholder,
     disabled = false,
     readOnly = false,
     minHeight = "200px",
@@ -2163,7 +2407,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
 
   const toolbarGroups = customToolbar
     ? normalizeToolbarConfig(customToolbar)
-    : getToolbarByPreset(toolbarPreset);
+    : getToolbarByPreset(toolbarPreset, m);
 
   /**
    * {@link refreshHistoryNavState} 会临时 focus 编辑区以调用 queryCommandEnabled；
@@ -2537,8 +2781,13 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         const html = getEditorHtml();
         const win = globalThis.open("", "_blank");
         if (win) {
+          /** 标题用 messages.printTitle 转义后写入，避免本地化文案含 `<` 等破坏 HTML */
+          const safeTitle = m.printTitle
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
           win.document.write(
-            `<!DOCTYPE html><html><head><meta charset="utf-8"><title>打印</title></head><body>${html}</body></html>`,
+            `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${html}</body></html>`,
           );
           win.document.close();
           win.focus();
@@ -2552,7 +2801,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         return;
       }
       if (cmd === "shortcuts") {
-        rteAuxMessage.value = RTE_SHORTCUTS_HELP_TEXT;
+        rteAuxMessage.value = m.shortcutsModal.body;
         rteAuxKind.value = "shortcuts";
         return;
       }
@@ -2854,7 +3103,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
     const ed = document.getElementById(editorId) as HTMLDivElement | null;
     if (!ed) return;
     rteRedoEligibleAfterUndo = false;
-    rteApplyLinkUrl(ed, url, saved);
+    rteApplyLinkUrl(ed, url, saved, m.linkText);
     emitChange();
     queueMicrotask(() => refreshHistoryNavState());
   };
@@ -2978,7 +3227,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         aria-hidden={showToolbar ? undefined : true}
         aria-live="polite"
       >
-        字数：{wordCountMemo.value}
+        {m.wordCount(wordCountMemo.value)}
       </div>
     );
   }
@@ -3152,7 +3401,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
     const text = getPlainText(editor.innerHTML);
     const idx = text.indexOf(query);
     if (idx === -1) {
-      openRteAuxInfo("未找到");
+      openRteAuxInfo(m.notFound);
       return;
     }
     try {
@@ -3188,7 +3437,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         }
       }
     } catch {
-      openRteAuxInfo("未找到");
+      openRteAuxInfo(m.notFound);
     }
   };
 
@@ -3252,7 +3501,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         data-rte-toolbar
         aria-hidden={showToolbar ? undefined : true}
         role={showToolbar ? "toolbar" : undefined}
-        aria-label={showToolbar ? "编辑工具栏" : undefined}
+        aria-label={showToolbar ? m.toolbarAriaLabel : undefined}
         onMouseDown={(e: Event) => {
           /**
            * 对按钮等阻止默认可保留编辑区选区；若对原生 `<select>` 也 `preventDefault`，下拉无法展开（段落/字号/行高无反应）。
@@ -3323,7 +3572,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
                           <select
                             class={twMerge(
                               rteToolbarSelectFitCls,
-                              "appearance-none border-0 bg-transparent p-0 pr-2.5 text-sm font-medium focus:outline-none",
+                              "appearance-none border-0 bg-transparent p-0 pr-2.5 text-sm font-medium focus:outline-hidden",
                               rteToolbarDropdownDisabled(
                                   rteSource,
                                   disabled,
@@ -3415,9 +3664,9 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
                   <RteToolbarItemTip
                     key={item.key}
                     content={item.key === "sourceHtml" && rteSource
-                      ? "返回可视化编辑"
+                      ? m.sourceReturn
                       : item.key === "fullscreen" && rteFs
-                      ? "退出全屏"
+                      ? m.fullscreenExit
                       : item.title}
                   >
                     {
@@ -3443,9 +3692,9 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
                             item.command !== "rteToggleSourceHtml"),
                       )}
                       aria-label={item.key === "sourceHtml" && rteSource
-                        ? "返回可视化编辑"
+                        ? m.sourceReturn
                         : item.key === "fullscreen" && rteFs
-                        ? "退出全屏"
+                        ? m.fullscreenExit
                         : item.title}
                       onMouseDownCapture={item.command === "foreColor" ||
                           item.command === "backColor"
@@ -3565,7 +3814,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
           spellcheck={false}
           disabled={disabled}
           readOnly={readOnly}
-          aria-label="HTML 源码"
+          aria-label={m.sourceTextareaAriaLabel}
           aria-hidden={!srcOn ? true : undefined}
           value={rteSourceHtml}
           onInput={(e: Event) => {
@@ -3594,14 +3843,14 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
     ) => (
       <div class="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="primary" onClick={() => onConfirm()}>
-          确定
+          {m.confirm}
         </Button>
         <Button
           type="button"
           variant="default"
           onClick={() => closeRteAuxModal()}
         >
-          取消
+          {m.cancel}
         </Button>
       </div>
     );
@@ -3611,7 +3860,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         <Modal
           open
           onClose={closeRteAuxModal}
-          title="插入图片"
+          title={m.imageModal.title}
           width="sm"
           keyboard
           footer={footerOkCancel(confirmRteAuxImageUrl)}
@@ -3620,7 +3869,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
             class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
             for={`${editorId}-rte-aux-f1`}
           >
-            图片 URL
+            {m.imageModal.urlLabel}
           </label>
           <Input
             id={`${editorId}-rte-aux-f1`}
@@ -3653,7 +3902,9 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         <Modal
           open
           onClose={closeRteAuxModal}
-          title={k === "tableHeader" ? "插入表格（含表头）" : "插入表格"}
+          title={k === "tableHeader"
+            ? m.tableModal.headerTitle
+            : m.tableModal.plainTitle}
           width="sm"
           keyboard
           footer={footerOkCancel(onConfirm)}
@@ -3662,7 +3913,9 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
             class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
             for={`${editorId}-rte-aux-f1`}
           >
-            {k === "tableHeader" ? "行数（含表头）" : "行数"}
+            {k === "tableHeader"
+              ? m.tableModal.headerRowsLabel
+              : m.tableModal.rowsLabel}
           </label>
           <Input
             id={`${editorId}-rte-aux-f1`}
@@ -3679,7 +3932,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
             class="mb-1.5 mt-3 block text-sm font-medium text-slate-700 dark:text-slate-300"
             for={`${editorId}-rte-aux-f2`}
           >
-            列数
+            {m.tableModal.colsLabel}
           </label>
           <Input
             id={`${editorId}-rte-aux-f2`}
@@ -3708,7 +3961,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         <Modal
           open
           onClose={closeRteAuxModal}
-          title="导出内容"
+          title={m.exportModal.title}
           width="sm"
           keyboard
           footer={
@@ -3718,27 +3971,27 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
                 variant="primary"
                 onClick={() => performExportDownload(true)}
               >
-                导出 HTML
+                {m.exportModal.exportHtml}
               </Button>
               <Button
                 type="button"
                 variant="default"
                 onClick={() => performExportDownload(false)}
               >
-                导出纯文本
+                {m.exportModal.exportText}
               </Button>
               <Button
                 type="button"
                 variant="default"
                 onClick={() => closeRteAuxModal()}
               >
-                取消
+                {m.exportModal.cancel}
               </Button>
             </div>
           }
         >
           <p class="text-sm text-slate-600 dark:text-slate-300">
-            选择导出格式：HTML 保留标签与样式线索；纯文本仅保留可见文字。
+            {m.exportModal.hint}
           </p>
         </Modal>
       );
@@ -3749,7 +4002,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         <Modal
           open
           onClose={closeRteAuxModal}
-          title="快捷键"
+          title={m.shortcutsModal.title}
           width="sm"
           keyboard
           footer={
@@ -3759,7 +4012,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
                 variant="primary"
                 onClick={() => closeRteAuxModal()}
               >
-                知道了
+                {m.shortcutsModal.ok}
               </Button>
             </div>
           }
@@ -3776,7 +4029,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
         <Modal
           open
           onClose={closeRteAuxModal}
-          title="提示"
+          title={m.infoModal.title}
           width="sm"
           keyboard
           footer={
@@ -3786,7 +4039,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
                 variant="primary"
                 onClick={() => closeRteAuxModal()}
               >
-                确定
+                {m.infoModal.ok}
               </Button>
             </div>
           }
@@ -3826,58 +4079,58 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
           <input
             type="text"
             data-find-input
-            placeholder="查找"
+            placeholder={m.findbar.findPlaceholder}
             class={twMerge(
               findBarInputSurface,
               controlBlueFocusRing(!hideFocusRing),
             )}
           />
-          <RteToolbarItemTip content="查找下一处匹配">
+          <RteToolbarItemTip content={m.findbar.findNextTip}>
             <button
               type="button"
               class={twMerge(
                 toolbarBtnBase,
                 controlBlueFocusRing(!hideFocusRing),
               )}
-              aria-label="查找下一处匹配"
+              aria-label={m.findbar.findNextTip}
               onClick={() => doFind()}
             >
-              查找
+              {m.findbar.findButton}
             </button>
           </RteToolbarItemTip>
           <input
             type="text"
             data-replace-input
-            placeholder="替换为"
+            placeholder={m.findbar.replacePlaceholder}
             class={twMerge(
               findBarInputSurface,
               controlBlueFocusRing(!hideFocusRing),
             )}
           />
-          <RteToolbarItemTip content="替换当前匹配项">
+          <RteToolbarItemTip content={m.findbar.replaceCurrentTip}>
             <button
               type="button"
               class={twMerge(
                 toolbarBtnBase,
                 controlBlueFocusRing(!hideFocusRing),
               )}
-              aria-label="替换当前匹配项"
+              aria-label={m.findbar.replaceCurrentTip}
               onClick={() => doReplace(false)}
             >
-              替换
+              {m.findbar.replaceButton}
             </button>
           </RteToolbarItemTip>
-          <RteToolbarItemTip content="替换文档内全部匹配项">
+          <RteToolbarItemTip content={m.findbar.replaceAllTip}>
             <button
               type="button"
               class={twMerge(
                 toolbarBtnBase,
                 controlBlueFocusRing(!hideFocusRing),
               )}
-              aria-label="替换文档内全部匹配项"
+              aria-label={m.findbar.replaceAllTip}
               onClick={() => doReplace(true)}
             >
-              全部替换
+              {m.findbar.replaceAllButton}
             </button>
           </RteToolbarItemTip>
         </div>
@@ -3939,7 +4192,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
           <Modal
             open
             onClose={closeLinkUrlModal}
-            title="插入链接"
+            title={m.linkModal.title}
             width="sm"
             keyboard
             footer={
@@ -3949,14 +4202,14 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
                   variant="primary"
                   onClick={() => confirmLinkUrl()}
                 >
-                  确定
+                  {m.linkModal.confirm}
                 </Button>
                 <Button
                   type="button"
                   variant="default"
                   onClick={() => closeLinkUrlModal()}
                 >
-                  取消
+                  {m.linkModal.cancel}
                 </Button>
               </div>
             }
@@ -3965,7 +4218,7 @@ export function RichTextEditor(props: RichTextEditorProps): JSX.Element {
               class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
               for={`${editorId}-rte-link-url`}
             >
-              链接 URL
+              {m.linkModal.urlLabel}
             </label>
             <Input
               id={`${editorId}-rte-link-url`}

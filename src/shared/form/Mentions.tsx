@@ -19,6 +19,20 @@ export interface MentionOption {
   label: string;
 }
 
+/** Mentions 内置文案 */
+export interface MentionsMessages {
+  /** 占位默认文案；与 {@link MentionsProps.placeholder} 同义，后者优先 */
+  placeholder: string;
+  /** 候选下拉列表 `aria-label` */
+  listbox: string;
+}
+
+/** 默认中文文案 */
+export const defaultMentionsMessages: MentionsMessages = {
+  placeholder: "输入 @ 提及",
+  listbox: "提及候选",
+};
+
 export interface MentionsProps {
   /** 当前值（受控可选） */
   value?: MaybeSignal<string>;
@@ -40,10 +54,12 @@ export interface MentionsProps {
   hideFocusRing?: boolean;
   name?: string;
   id?: string;
+  /** 多语言/自定义文案；未传字段走 {@link defaultMentionsMessages} */
+  messages?: Partial<MentionsMessages>;
 }
 
 const textareaSurface =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y min-h-[80px]";
+  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y min-h-[80px]";
 
 const dropdownCls =
   "absolute z-10 mt-1 w-full min-w-[160px] max-h-48 overflow-auto rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg py-1";
@@ -87,6 +103,8 @@ function MentionsDropdown(props: {
   listboxRef: { current: HTMLDivElement | null };
   /** 稳定 DOM id，供 textarea `aria-controls` / `aria-activedescendant` */
   listboxId: string;
+  /** 合并默认值后的 listbox `aria-label` */
+  listboxLabel: string;
 }) {
   const {
     showDropdown = false,
@@ -96,6 +114,7 @@ function MentionsDropdown(props: {
     onHighlightIndex,
     listboxRef,
     listboxId,
+    listboxLabel,
   } = props;
   const { open: show, options: opts } = resolveMentionsDropdownState(
     showDropdown,
@@ -108,7 +127,7 @@ function MentionsDropdown(props: {
       id={listboxId}
       class={dropdownCls}
       role="listbox"
-      aria-label="提及候选"
+      aria-label={listboxLabel}
     >
       {opts.map((opt, i) => (
         <div
@@ -139,7 +158,6 @@ function MentionsDropdown(props: {
 export function Mentions(props: MentionsProps): JSX.Element {
   const {
     value,
-    placeholder = "输入 @ 提及",
     rows = 3,
     disabled = false,
     onChange,
@@ -157,7 +175,12 @@ export function Mentions(props: MentionsProps): JSX.Element {
     hideFocusRing = false,
     name,
     id,
+    messages,
   } = props;
+
+  /** 合并默认中文文案与外部传入 messages */
+  const m = { ...defaultMentionsMessages, ...messages };
+  const placeholder = props.placeholder ?? m.placeholder;
 
   /** 下拉内键盘高亮下标，-1 为未选中项 */
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -296,6 +319,7 @@ export function Mentions(props: MentionsProps): JSX.Element {
         onHighlightIndex={setHighlightedIndex}
         listboxRef={listboxRef}
         listboxId={listboxId}
+        listboxLabel={m.listbox}
       />
     </div>
   );

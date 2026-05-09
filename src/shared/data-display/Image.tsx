@@ -243,7 +243,7 @@ export function Image(props: ImageProps): JSX.Element {
         ? (
           <div
             class={twMerge(
-              "absolute inset-0 z-[1] flex items-center justify-center text-slate-400",
+              "absolute inset-0 z-1 flex items-center justify-center text-slate-400",
               st === "loading" ? "" : "hidden",
             )}
           >

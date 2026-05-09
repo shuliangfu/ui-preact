@@ -141,9 +141,9 @@ export function Hero(props: HeroProps): JSX.Element {
       )}
 
       {overlayBgString != null && overlayBgString !== "" &&
-        backgroundUrlLayer(overlayBgString, "z-[1]")}
+        backgroundUrlLayer(overlayBgString, "z-1")}
       {overlayBgNode != null && (
-        <div class="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 z-1 overflow-hidden">
           {overlayBgNode}
         </div>
       )}
@@ -151,7 +151,7 @@ export function Hero(props: HeroProps): JSX.Element {
       {scrimClass !== "" && (
         <div
           class={twMerge(
-            "pointer-events-none absolute inset-0 z-[5]",
+            "pointer-events-none absolute inset-0 z-5",
             scrimClass,
           )}
           aria-hidden="true"

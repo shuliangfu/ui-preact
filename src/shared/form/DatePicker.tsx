@@ -20,8 +20,10 @@ import {
   pickerTriggerSurface,
 } from "./input-focus-ring.ts";
 import {
+  defaultPickerCalendarNavMessages,
   type PickerCalendarHeaderPanel,
   PickerCalendarNav,
+  type PickerCalendarNavMessages,
 } from "./picker-calendar-nav.tsx";
 import {
   DEFAULT_DATE_FORMAT,
@@ -36,6 +38,7 @@ import {
   registerPickerFixedOverlayPositionAndOutsideClick,
 } from "./picker-portal-utils.ts";
 import { pickerCalendarIconProps } from "./picker-trigger-icon.ts";
+import { resolveFormControlSize } from "./form-control-context.ts";
 import {
   commitMaybeSignal,
   type MaybeSignal,
@@ -54,6 +57,35 @@ export type DatePickerMode = "single" | "range" | "multiple";
 /** 受控值形态 */
 export type DatePickerValue = string | DatePickerRangeValue | string[];
 
+/** DatePicker 内置文案 */
+export interface DatePickerMessages {
+  /** 占位默认文案；与 {@link DatePickerProps.placeholder} 同义，后者优先 */
+  placeholder: string;
+  /** 浮层 `aria-label` */
+  dialog: string;
+  /** 「确定」按钮 */
+  confirm: string;
+  /** 「取消」按钮 */
+  cancel: string;
+  /** range 模式空值占位（如 `… ~ 2025-01-01`） */
+  rangePlaceholder: string;
+  /** multiple 模式合并展示（超过 2 项），参数为日期个数 */
+  multipleSummary: (count: number) => string;
+  /** 日历导航条文案 */
+  calendarNav: Partial<PickerCalendarNavMessages>;
+}
+
+/** 默认中文文案 */
+export const defaultDatePickerMessages: DatePickerMessages = {
+  placeholder: "请选择日期",
+  dialog: "选择日期",
+  confirm: "确定",
+  cancel: "取消",
+  rangePlaceholder: "…",
+  multipleSummary: (count) => `${count} 个日期`,
+  calendarNav: {},
+};
+
 export interface DatePickerProps {
   mode?: DatePickerMode;
   value?: MaybeSignal<DatePickerValue>;
@@ -69,6 +101,8 @@ export interface DatePickerProps {
   hideFocusRing?: boolean;
   format?: string;
   panelAttach?: "anchored" | "viewport";
+  /** 多语言/自定义文案；未传字段走 {@link defaultDatePickerMessages} */
+  messages?: Partial<DatePickerMessages>;
 }
 
 const DROPDOWN_ESC_KEY = "__lastDropdownClose" as const;
@@ -145,6 +179,8 @@ function datePickerDisplayText(
   mode: DatePickerMode,
   raw: unknown,
   placeholder: string,
+  rangePlaceholder: string,
+  multipleSummary: (count: number) => string,
 ): string {
   if (mode === "single") {
     const s = typeof raw === "string" ? raw : "";
@@ -155,12 +191,12 @@ function datePickerDisplayText(
     const st = o.start?.trim() ?? "";
     const en = o.end?.trim() ?? "";
     if (st === "" && en === "") return placeholder;
-    return `${st || "…"} ~ ${en || "…"}`;
+    return `${st || rangePlaceholder} ~ ${en || rangePlaceholder}`;
   }
   const arr = isYmdStringArray(raw) ? raw : [];
   if (arr.length === 0) return placeholder;
   if (arr.length <= 2) return arr.join("、");
-  return `${arr.length} 个日期`;
+  return multipleSummary(arr.length);
 }
 
 function datePickerHiddenSerialized(
@@ -217,6 +253,8 @@ function getDatePickerDerivatives(props: DatePickerProps) {
  * DatePicker：日期选择器。
  */
 export function DatePicker(props: DatePickerProps): JSX.Element {
+  /** 与 {@link Input} 一致：继承 Form 注入的控件尺寸 */
+  const resolvedControlSize = resolveFormControlSize(props.size);
   const openState = useSignal(false);
   const draft = useSignal<Date | null>(null);
   const draftRangeStart = useSignal<Date | null>(null);
@@ -442,21 +480,27 @@ export function DatePicker(props: DatePickerProps): JSX.Element {
   const derivatives = getDatePickerDerivatives(props);
   const rawCommitted = resolveDatePickerRaw(props.value);
   const hiddenVal = datePickerHiddenSerialized(derivatives.mode, rawCommitted);
-  const placeholder = props.placeholder ?? "请选择日期";
+  /** 合并默认中文文案与外部传入 messages */
+  const pickerMessages: DatePickerMessages = {
+    ...defaultDatePickerMessages,
+    ...(props.messages ?? {}),
+  };
+  const placeholder = props.placeholder ?? pickerMessages.placeholder;
   const rawDisplay = rawForTriggerDisplay();
   const displayText = datePickerDisplayText(
     derivatives.mode,
     rawDisplay,
     placeholder,
+    pickerMessages.rangePlaceholder,
+    pickerMessages.multipleSummary,
   );
   const hasVal = datePickerHasValue(derivatives.mode, rawDisplay);
-  const size = props.size ?? "md";
   const triggerBtnClass = twMerge(
     pickerTriggerSurface,
     controlBlueFocusRing(!props.hideFocusRing),
-    pickerTriggerSizeClasses[size],
+    pickerTriggerSizeClasses[resolvedControlSize],
   );
-  const iconProps = pickerCalendarIconProps(size);
+  const iconProps = pickerCalendarIconProps(resolvedControlSize);
 
   const useViewportPanel = (props.panelAttach ?? "anchored") === "viewport";
 
@@ -546,6 +590,7 @@ export function DatePicker(props: DatePickerProps): JSX.Element {
           confirmDisabled={confirmDisabled}
           confirmClass={confirmClass}
           useViewportPanel={useViewportPanel}
+          pickerMessages={pickerMessages}
         />
       )}
     </div>
@@ -575,6 +620,7 @@ function DatePickerOverlay(p: {
   confirmDisabled: boolean;
   confirmClass: string;
   useViewportPanel: boolean;
+  pickerMessages: DatePickerMessages;
 }): JSX.Element {
   const {
     props,
@@ -598,6 +644,7 @@ function DatePickerOverlay(p: {
     confirmDisabled,
     confirmClass,
     useViewportPanel,
+    pickerMessages,
   } = p;
 
   const { mode, dateFormatSpec, minDate, maxDate, disabledDate } =
@@ -606,7 +653,7 @@ function DatePickerOverlay(p: {
   return (
     <div
       role="dialog"
-      aria-label="选择日期"
+      aria-label={pickerMessages.dialog}
       class={twMerge(
         "pointer-events-auto w-max min-w-[288px] max-w-[min(100vw-1rem,24rem)] p-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg",
         useViewportPanel
@@ -672,6 +719,10 @@ function DatePickerOverlay(p: {
           else onSelectDayMultiple(d);
         }}
         disabledDate={disabledDate}
+        messages={{
+          ...defaultPickerCalendarNavMessages,
+          ...pickerMessages.calendarNav,
+        }}
       />
       <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
         <button
@@ -680,14 +731,14 @@ function DatePickerOverlay(p: {
           class={confirmClass}
           onClick={handleConfirm}
         >
-          确定
+          {pickerMessages.confirm}
         </button>
         <button
           type="button"
           class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
           onClick={handleCancel}
         >
-          取消
+          {pickerMessages.cancel}
         </button>
       </div>
     </div>

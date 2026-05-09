@@ -88,7 +88,49 @@ export interface MarkdownEditorProps {
   rows?: number;
   /** 为 `true` 时显示全屏按钮（根节点 toggles `md-editor-fullscreen`）；默认 `false` 不显示 */
   allowFullscreen?: boolean;
+  /** 多语言/自定义文案；未传字段走 {@link defaultMarkdownEditorMessages} */
+  messages?: Partial<MarkdownEditorMessages>;
 }
+
+/** MarkdownEditor 用户可见文案；通过 {@link MarkdownEditorProps.messages} 覆盖即可本地化 */
+export interface MarkdownEditorMessages {
+  /** 编辑区与切换按钮共用的「源码」label / tooltip */
+  sourceLabel: string;
+  /** 「预览」label / aria-label（预览区 region） */
+  previewLabel: string;
+  /** 渲染预览按钮 tooltip */
+  renderPreview: string;
+  /** 工具栏 `aria-label` */
+  toolbarAriaLabel: string;
+  /** 全屏按钮（未全屏） */
+  fullscreen: string;
+  /** 全屏按钮（已全屏） */
+  fullscreenExit: string;
+  /** Markdown 源码 textarea 的默认 `aria-label`（缺省可见标签时使用） */
+  textareaAriaLabel: string;
+  /** 预览空内容时的占位文案（HTML 直插，可含标签） */
+  previewEmpty: string;
+  /** 预览解析失败时的提示（HTML 直插，可含标签） */
+  previewError: string;
+  /** maxLength 字数提示，参数为剩余字符与最大字符 */
+  charCount: (remaining: number, maxLength: number) => string;
+}
+
+/** 默认中文文案 */
+export const defaultMarkdownEditorMessages: MarkdownEditorMessages = {
+  sourceLabel: "Markdown 源码",
+  previewLabel: "Markdown 预览",
+  renderPreview: "渲染预览",
+  toolbarAriaLabel: "Markdown 编辑器工具栏",
+  fullscreen: "全屏编辑",
+  fullscreenExit: "退出全屏",
+  textareaAriaLabel: "Markdown 源码",
+  previewEmpty:
+    `<p class="text-sm text-slate-400 dark:text-slate-500">开始输入 Markdown，预览区将显示渲染结果。</p>`,
+  previewError:
+    `<p class="text-red-600 dark:text-red-400 text-sm">Markdown 解析失败，请检查语法。</p>`,
+  charCount: (remaining, maxLength) => `剩余 ${remaining} / ${maxLength}`,
+};
 
 /** `parse` 默认与常见编辑器一致：GFM + 单换行转 `<br>` */
 const DEFAULT_PARSE: ParseOptions = {
@@ -104,7 +146,7 @@ const toolbarWrapCls =
 const toolbarGroupCls =
   "flex items-center gap-0.5 border-r border-slate-200 dark:border-slate-600 pr-1 last:border-r-0 last:pr-0";
 const toolbarBtnBase =
-  "inline-flex items-center justify-center p-1.5 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-slate-100 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed min-w-[28px] min-h-[28px] text-sm font-medium";
+  "inline-flex items-center justify-center p-1.5 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-slate-100 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed min-w-[28px] min-h-[28px] text-sm font-medium";
 
 /** 工具栏内 SVG 尺寸（同 {@link RichTextEditor} `rteToolbarSvgCls`） */
 const mdToolbarSvgCls = "size-4 shrink-0";
@@ -377,7 +419,7 @@ function mdToolbarToggleClass(active: boolean, showFocusRing: boolean): string {
 }
 
 const textareaBase =
-  "w-full min-h-[200px] border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y font-mono tab-size-2 leading-relaxed";
+  "w-full min-h-[200px] border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y font-mono tab-size-2 leading-relaxed";
 
 /**
  * 宽屏分栏时：在元素内纵向滚动，并隐藏滚动条（仍可滚轮 / 触摸板滚动）。
@@ -392,15 +434,20 @@ const readOnlyTextareaCls = "bg-slate-50 dark:bg-slate-800/80 cursor-default";
  *
  * @param md - 源码
  * @param opts - 与默认合并后的解析选项
+ * @param msg - 合并后的用户文案（空内容 / 解析失败占位）
  */
-function safeParseMarkdown(md: string, opts: ParseOptions): string {
+function safeParseMarkdown(
+  md: string,
+  opts: ParseOptions,
+  msg: MarkdownEditorMessages,
+): string {
   if (md.trim() === "") {
-    return `<p class="text-sm text-slate-400 dark:text-slate-500">开始输入 Markdown，预览区将显示渲染结果。</p>`;
+    return msg.previewEmpty;
   }
   try {
     return parse(md, opts);
   } catch {
-    return `<p class="text-red-600 dark:text-red-400 text-sm">Markdown 解析失败，请检查语法。</p>`;
+    return msg.previewError;
   }
 }
 
@@ -437,12 +484,17 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
     onMarkdownChange,
     name,
     id,
-    ariaLabel = "Markdown 源码",
+    ariaLabel,
     required = false,
     maxLength,
     rows = 12,
     allowFullscreen = false,
   } = props;
+
+  /** 合并默认中文文案与外部传入 messages（预览解析等闭包内再次合并以响应 props.messages 变化） */
+  const m = { ...defaultMarkdownEditorMessages, ...props.messages };
+  /** textarea `aria-label`：`ariaLabel` prop 优先 */
+  const textareaAriaResolved = ariaLabel ?? m.textareaAriaLabel;
 
   /** 全屏时用于切换 `md-editor-fullscreen` 的根容器 */
   const rootRef = useRef<HTMLDivElement>(null);
@@ -488,7 +540,12 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
 
   const previewHtml = computed(() => {
     if (preview === "off") return "";
-    return safeParseMarkdown(markdownSource.value, mergedParseOptions.value);
+    const msg = { ...defaultMarkdownEditorMessages, ...props.messages };
+    return safeParseMarkdown(
+      markdownSource.value,
+      mergedParseOptions.value,
+      msg,
+    );
   });
 
   /**
@@ -525,7 +582,8 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
     const remaining = Math.max(0, maxLength - len);
     const badge = charCountRef.current;
     if (badge != null) {
-      badge.textContent = `剩余 ${remaining} / ${maxLength}`;
+      const msg = { ...defaultMarkdownEditorMessages, ...props.messages };
+      badge.textContent = msg.charCount(remaining, maxLength);
     }
   });
 
@@ -641,7 +699,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
       spellcheck={false}
       autocapitalize="off"
       autocomplete="off"
-      aria-label={ariaLabel}
+      aria-label={textareaAriaResolved}
       aria-required={required}
       aria-invalid={error}
       aria-describedby={textareaAriaDescribedBy}
@@ -713,7 +771,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
             showToolbar && "rounded-t-none",
           )}
           role="region"
-          aria-label="Markdown 预览"
+          aria-label={m.previewLabel}
         />
       </div>
     )
@@ -738,7 +796,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
             "flex w-full min-h-10 shrink-0 items-center gap-2",
           )}
           role="toolbar"
-          aria-label="Markdown 编辑器工具栏"
+          aria-label={m.toolbarAriaLabel}
           onMouseDown={(e: Event) => {
             const t = e.target;
             if (t instanceof Element && t.closest("select")) return;
@@ -758,7 +816,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
           <div class="flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-1">
             {showModeToolbar && (
               <div class={toolbarGroupCls}>
-                <MdToolbarItemTip content="Markdown 源码">
+                <MdToolbarItemTip content={m.sourceLabel}>
                   <button
                     type="button"
                     class={mdToolbarToggleClass(
@@ -766,7 +824,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
                       !hideFocusRing,
                     )}
                     disabled={disabled}
-                    aria-label="Markdown 源码"
+                    aria-label={m.sourceLabel}
                     aria-pressed={tab === "edit"}
                     onClick={() => {
                       activeTab.value = "edit";
@@ -775,7 +833,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
                     <MdToolbarIconSource />
                   </button>
                 </MdToolbarItemTip>
-                <MdToolbarItemTip content="渲染预览">
+                <MdToolbarItemTip content={m.renderPreview}>
                   <button
                     type="button"
                     class={mdToolbarToggleClass(
@@ -783,7 +841,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
                       !hideFocusRing,
                     )}
                     disabled={disabled}
-                    aria-label="Markdown 预览"
+                    aria-label={m.previewLabel}
                     aria-pressed={tab === "preview"}
                     onClick={() => {
                       activeTab.value = "preview";
@@ -802,7 +860,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
                 "shrink-0 border-r-0 pr-0",
               )}
             >
-              <MdToolbarItemTip content={fs ? "退出全屏" : "全屏编辑"}>
+              <MdToolbarItemTip content={fs ? m.fullscreenExit : m.fullscreen}>
                 <button
                   type="button"
                   class={twMerge(
@@ -810,7 +868,7 @@ export function MarkdownEditor(props: MarkdownEditorProps): JSX.Element {
                     controlBlueFocusRing(!hideFocusRing),
                   )}
                   disabled={disabled}
-                  aria-label={fs ? "退出全屏" : "全屏编辑"}
+                  aria-label={fs ? m.fullscreenExit : m.fullscreen}
                   onClick={toggleMdFullscreen}
                 >
                   <MdToolbarIconFullscreen exit={fs} />

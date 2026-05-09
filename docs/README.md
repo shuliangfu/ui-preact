@@ -5,6 +5,13 @@
 **`../src`**（`@dreamer/ui-preact`）引用，**不依赖** `@dreamer/ui-view` 或
 `@dreamer/view`。
 
+## 文案（messages）与 API 表
+
+支持 `messages` 的组件：用
+**`DocsMessagesSection`**（`src/components/DocsMessagesSection.tsx`）在 **API**
+之上单独成章；文案字段单独 **`DocsApiTable`**（首列「字段」），勿与 props
+表混排；API 表仅保留 **`messages`** 一行并指向文案表。
+
 ## 依赖与 import map
 
 `deno.json` 将 `@dreamer/ui-preact` 映射到 **`../src/mod.ts`** 及各子路径；在
