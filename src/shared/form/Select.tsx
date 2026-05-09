@@ -77,8 +77,9 @@ const sizeClassesDropdown: Record<SizeVariant, string> = {
   lg: "px-4 py-2.5 text-base rounded-lg",
 };
 
+/** 选项行：直角条，避免每项单独大圆角造成「胶囊」观感。 */
 const optionBase =
-  "px-3 py-2 text-sm text-left w-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg";
+  "rounded-none px-3 py-2 text-sm text-left w-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed";
 
 /**
  * 自绘下拉分支：`button` + `hidden input` + `listbox`；打开时注册 Esc 关闭（{@link DROPDOWN_ESC_KEY}）。
