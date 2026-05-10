@@ -175,20 +175,8 @@ Chart.js：ChartLine、ChartBar、ChartPie、ChartDoughnut、ChartRadar、ChartP
 
 ## 📚 文档站与示例
 
-完整交互文档与示例在本仓库的 **`docs/`** 包中维护（与其它 Dreamer UI
-包相同结构）。本地运行方式见该目录下的说明；线上文档站由团队单独部署。
-
----
-
-## 变更日志
-
-**最新：[1.1.0-beta.20] — 2026-05-10**
-
-- **新增：** **Input** `accept`、`multiple` 与安全 `type="file"` 行为（与
-  `@dreamer/ui-view` 对齐）。
-- **变更：** **Input** 在文件模式下的清除与输入同步逻辑。
-
-完整记录见 [CHANGELOG-zh.md](./CHANGELOG-zh.md)。
+版本说明、迁移与完整组件 API 在 **文档站** 维护。交互路由与示例在本仓库 **`docs/`**
+包中（与其它 Dreamer UI 包相同结构）；本地运行见 **`docs/README.md`**，线上文档站由团队部署。
 
 ---
 

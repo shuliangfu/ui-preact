@@ -185,22 +185,11 @@ ChartPolarArea, ChartBubble, ChartScatter
 
 ## 📚 Documentation
 
-Interactive documentation and live examples ship in this repository’s
+Version history, migration notes, and full component APIs are maintained on the
+**documentation site**. Interactive routes and examples ship in this repository’s
 **`docs/`** package (same layout as other Dreamer UI packages). Run the docs app
-locally per that package’s `README` when you need API tables and demos beyond
-this file.
-
----
-
-## Changelog
-
-**Latest: [1.1.0-beta.20] — 2026-05-10**
-
-- **Added:** **Input** `accept` / `multiple` and safe `type="file"` handling
-  (parity with `@dreamer/ui-view`).
-- **Changed:** File-mode clear and input/change synchronization for **Input**.
-
-Full history: [CHANGELOG.md](./CHANGELOG.md).
+locally per **`docs/README.md`** when you need API tables and demos beyond this
+file.
 
 ---
 
