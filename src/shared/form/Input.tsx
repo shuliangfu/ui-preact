@@ -71,6 +71,10 @@ export interface InputProps {
   name?: string;
   /** 原生 id */
   id?: string;
+  /** 原生 accept（常用于 `type="file"`） */
+  accept?: string;
+  /** 原生 multiple（常用于 `type="file"`） */
+  multiple?: boolean;
   /**
    * 自动完成与暗色 `:-webkit-autofill` 长 class：`true` 时合并并按 `type` 写原生 token；`string` 时原样；`false`/不传则都不加。
    */
@@ -182,6 +186,10 @@ function InputGroupShell(props: {
   onClear: () => void;
   /** 清除按钮无障碍标签（来自 {@link InputMessages.clear}） */
   clearAriaLabel: string;
+  /** 原生 accept */
+  accept?: string;
+  /** 原生 multiple */
+  multiple?: boolean;
 }): JSX.Element {
   const {
     size,
@@ -210,6 +218,8 @@ function InputGroupShell(props: {
     onPaste,
     onClear,
     clearAriaLabel,
+    accept,
+    multiple,
   } = props;
 
   const innerInputCls = twMerge(
@@ -238,7 +248,9 @@ function InputGroupShell(props: {
         readOnly={readOnly}
         aria-required={required}
         aria-invalid={error}
-        value={value}
+        {...(type !== "file" ? { value } : {})}
+        {...(accept ? { accept } : {})}
+        {...(multiple ? { multiple: true } : {})}
         class={innerInputCls}
         onInput={onInput}
         onChange={onChange}
@@ -310,6 +322,8 @@ export function Input(props: InputProps): JSX.Element {
     id,
     autoComplete,
     messages,
+    accept,
+    multiple,
   } = props;
   /** 合并默认中文文案与外部传入 messages */
   const m = { ...defaultInputMessages, ...messages };
@@ -324,7 +338,9 @@ export function Input(props: InputProps): JSX.Element {
    * @param e - 原生 input 事件
    */
   const handleInput = (e: Event) => {
-    commitMaybeSignal(value, (e.target as HTMLInputElement).value);
+    if (type !== "file") {
+      commitMaybeSignal(value, (e.target as HTMLInputElement).value);
+    }
     onInput?.(e);
   };
 
@@ -334,11 +350,14 @@ export function Input(props: InputProps): JSX.Element {
    * @param e - 原生 change 事件
    */
   const handleChange = (e: Event) => {
-    commitMaybeSignal(value, (e.target as HTMLInputElement).value);
+    if (type !== "file") {
+      commitMaybeSignal(value, (e.target as HTMLInputElement).value);
+    }
     onChange?.(e);
   };
 
   const handleClear = () => {
+    if (type === "file") return;
     commitMaybeSignal(value, "");
     const doc = globalThis.document;
     if (!doc?.createElement) return;
@@ -376,6 +395,8 @@ export function Input(props: InputProps): JSX.Element {
     onKeyUp,
     onClick,
     onPaste,
+    ...(accept ? { accept } : {}),
+    ...(multiple ? { multiple: true as boolean } : {}),
   };
 
   const hasAddon = prefix != null && prefix !== false ||
@@ -383,7 +404,9 @@ export function Input(props: InputProps): JSX.Element {
     allowClear;
 
   if (!hasAddon) {
-    return <input {...inputSpreadProps} value={value} />;
+    return type === "file"
+      ? <input {...inputSpreadProps} />
+      : <input {...inputSpreadProps} value={value} />;
   }
 
   const shellCls = twMerge(
@@ -434,6 +457,8 @@ export function Input(props: InputProps): JSX.Element {
       onPaste={onPaste}
       onClear={handleClear}
       clearAriaLabel={m.clear}
+      accept={accept}
+      multiple={multiple}
     />
   );
 }
