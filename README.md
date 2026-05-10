@@ -194,11 +194,11 @@ this file.
 
 ## Changelog
 
-**Latest: [1.1.0-beta.4] — 2026-04-22**
+**Latest: [1.1.0-beta.20] — 2026-05-10**
 
-- **Changed:** `uiPreactTailwindPlugin` logs for `@source` CSS generation use
-  `@dreamer/logger` at **debug** level; `onInit` failures use `Logger.error`
-  when the injected logger is a `Logger` instance.
+- **Added:** **Input** `accept` / `multiple` and safe `type="file"` handling
+  (parity with `@dreamer/ui-view`).
+- **Changed:** File-mode clear and input/change synchronization for **Input**.
 
 Full history: [CHANGELOG.md](./CHANGELOG.md).
 
