@@ -186,10 +186,10 @@ ChartPolarArea, ChartBubble, ChartScatter
 ## 📚 Documentation
 
 Version history, migration notes, and full component APIs are maintained on the
-**documentation site**. Interactive routes and examples ship in this repository’s
-**`docs/`** package (same layout as other Dreamer UI packages). Run the docs app
-locally per **`docs/README.md`** when you need API tables and demos beyond this
-file.
+**documentation site**. Interactive routes and examples ship in this
+repository’s **`docs/`** package (same layout as other Dreamer UI packages). Run
+the docs app locally per **`docs/README.md`** when you need API tables and demos
+beyond this file.
 
 ---
 
