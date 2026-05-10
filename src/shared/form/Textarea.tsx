@@ -74,9 +74,9 @@ export interface TextareaProps {
   messages?: Partial<TextareaMessages>;
 }
 
-/** 基础底纹（不含 ring） */
+/** 基础底纹（不含 ring）；`w-full min-w-0` 覆盖原生 textarea 默认 cols 导致的窄宽度，并在 grid/flex 子项中正确伸缩 */
 const textareaSurface =
-  "border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y min-h-[80px]";
+  "box-border w-full min-w-0 border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-300 dark:border-slate-600 focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-3 py-2 text-sm rounded-lg resize-y min-h-[80px]";
 const readOnlyCls = "bg-slate-50 dark:bg-slate-800/80 cursor-default";
 
 /**
@@ -188,7 +188,7 @@ export function Textarea(props: TextareaProps): JSX.Element {
   }
 
   return (
-    <div>
+    <div class="w-full min-w-0">
       <textarea {...textareaProps} value={value} />
       <TextareaLengthDisplay value={value} maxLength={maxLength} messages={m} />
     </div>

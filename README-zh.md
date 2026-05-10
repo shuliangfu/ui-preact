@@ -175,8 +175,9 @@ Chart.js：ChartLine、ChartBar、ChartPie、ChartDoughnut、ChartRadar、ChartP
 
 ## 📚 文档站与示例
 
-版本说明、迁移与完整组件 API 在 **文档站** 维护。交互路由与示例在本仓库 **`docs/`**
-包中（与其它 Dreamer UI 包相同结构）；本地运行见 **`docs/README.md`**，线上文档站由团队部署。
+版本说明、迁移与完整组件 API 在 **文档站** 维护。交互路由与示例在本仓库
+**`docs/`** 包中（与其它 Dreamer UI 包相同结构）；本地运行见
+**`docs/README.md`**，线上文档站由团队部署。
 
 ---
 
