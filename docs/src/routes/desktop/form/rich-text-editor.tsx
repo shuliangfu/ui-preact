@@ -79,6 +79,13 @@ const RICH_TEXT_EDITOR_API: ApiRow[] = [
     description: "最小高度（如 200px）",
   },
   {
+    name: "maxHeight",
+    type: "string",
+    default: "-",
+    description:
+      "整框最大高度（如 70vh、min(76dvh,44rem)）；正文在框内滚动；全屏时自动取消上限",
+  },
+  {
     name: "onInsertImage",
     type: "() => string | Promise<string>",
     default: "-",
@@ -125,7 +132,7 @@ export default function FormRichTextEditor() {
       <section>
         <Title level={1}>RichTextEditor 富文本</Title>
         <Paragraph class="mt-2">
-          富文本编辑器：value、onChange、toolbarPreset（default/simple/full）、toolbar、placeholder、disabled、readOnly、minHeight、onInsertImage、onUploadImage、onPasteImage。宽度由
+          富文本编辑器：value、onChange、toolbarPreset（default/simple/full）、toolbar、placeholder、disabled、readOnly、minHeight、maxHeight、onInsertImage、onUploadImage、onPasteImage。宽度由
           class 控制，表单中需占满一列时传 class="w-full"。Tailwind v4 +
           light/dark。
         </Paragraph>
