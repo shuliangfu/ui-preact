@@ -19,7 +19,21 @@ deno add jsr:@dreamer/ui-preact
 
 # Bun
 bunx jsr add @dreamer/ui-preact
+
+# Node.js 22+
+npx jsr add @dreamer/ui-preact
 ```
+
+---
+
+## 🌍 Environment Compatibility
+
+| Environment  | Version | Support |
+| ------------ | ------- | ------- |
+| **Deno**     | 2.9+    | ✅      |
+| **Bun**      | 1.3+    | ✅      |
+| **Node.js**  | 22+     | ✅      |
+| Browser      | -       | ✅      |
 
 ---
 

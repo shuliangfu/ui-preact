@@ -24,10 +24,10 @@
     "chart.js": "npm:chart.js@^4.5.1",
     "prismjs": "npm:prismjs@^1.30.0",
 
-    "preact": "npm:preact@^10.29.1",
-    "preact/jsx-runtime": "npm:preact@^10.29.1/jsx-runtime",
-    "preact/hooks": "npm:preact@^10.29.1/hooks",
-    "preact/compat": "npm:preact@^10.29.1/compat",
+    "preact": "npm:preact@^10.29.2",
+    "preact/jsx-runtime": "npm:preact@^10.29.2/jsx-runtime",
+    "preact/hooks": "npm:preact@^10.29.2/hooks",
+    "preact/compat": "npm:preact@^10.29.2/compat",
     "@preact/signals": "npm:@preact/signals@^2.9.0",
 
     "@dreamer/ui-preact": "../src/mod.ts",
