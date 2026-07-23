@@ -39,7 +39,7 @@ const RICH_TEXT_EDITOR_API: ApiRow[] = [
     type: "default | simple | full",
     default: "default",
     description:
-      "工具栏预设：default / simple（撤销/重做/加粗/斜体/下划线/链接）/ full（含表格、代码块、图片等）",
+      "工具栏预设：default / simple（撤销/重做/加粗/斜体/下划线/链接/全屏等）/ full（含表格、代码块、图片等）",
   },
   {
     name: "toolbar",

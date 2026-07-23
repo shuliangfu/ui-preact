@@ -5,7 +5,7 @@
  * 前景/背景色使用 {@link ColorPicker} 隐藏触发器 + 命令式 `openFromPointerEvent`；打开前克隆选区，
  * 确定时再恢复，避免操作取色面板导致选区丢失而无法正确 `execCommand`。
  * 支持粘贴图片到内容区（剪贴板图片转 data URL 或经 onPasteImage 上传后插入）。
- * 工具栏可配置为 simple（简单）、default（默认）、full（全部），或完全自定义；文字颜色与背景色在三档预设中均提供。
+ * 工具栏可配置为 simple（简单，含全屏）、default（默认）、full（全部），或完全自定义；文字颜色与背景色在三档预设中均提供。
  * 各预设工具栏首位为「编辑源码」：在 HTML 源码与可视化编辑之间切换；进入源码时会对 `innerHTML` 做缩进排版（类 Elements 结构）便于编辑。
  * 受控 HTML 仅在**编辑区未获焦**且非链接弹层打开时由 `effect`（@preact/signals）同步到 DOM；获焦时以浏览器 DOM
  * 为准，避免写 `innerHTML` 重置选区。`ref` 仅用 `createRef` 持有编辑区节点。
@@ -393,7 +393,23 @@ function getToolbarByPreset(
     },
   ];
 
-  const simple: ToolbarItem[][] = [rowBasic, rowTypography, rowColors];
+  /** 独立一行全屏（与 `full` 预设同源项一致），`simple` 用于小说等长文时可一键铺满视口编辑。 */
+  const rowFullscreen: ToolbarItem[] = [
+    {
+      key: "fullscreen",
+      title: t.fullscreen,
+      command: "fullscreen",
+      /** 图标由 `renderToolbarButtonContent` 的 `fullscreen` 分支绘制（全屏后切换为退出形） */
+      icon: "⛶",
+    },
+  ];
+
+  const simple: ToolbarItem[][] = [
+    rowBasic,
+    rowTypography,
+    rowColors,
+    rowFullscreen,
+  ];
 
   const defaultPreset: ToolbarItem[][] = [
     rowBasic,
